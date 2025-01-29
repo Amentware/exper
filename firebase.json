@@ -1,0 +1,1 @@
+{"hosting":{"source":".","ignore":["firebase.json","**/.*","**/node_modules/**"],"frameworksBackend":{"region":"asia-east1"}},"flutter":{"platforms":{"dart":{"lib/firebase_options.dart":{"projectId":"amentware-exper","configurations":{"web":"1:522123866552:web:c4e84d7b61f0edb2a6df4d"}}}}}}
