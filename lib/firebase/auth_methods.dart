@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:Exper/firebase/storage_methods.dart';
-import 'package:Exper/Model/user.dart' as model;
+import 'package:exper/firebase/storage_methods.dart';
+import 'package:exper/Model/user.dart' as model;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Authmethods {
@@ -39,11 +39,11 @@ class Authmethods {
           );
           if (photoUrl == "failed") {
             photoUrl =
-                "https://firebasestorage.googleapis.com/v0/b/Exper-f7bbf.appspot.com/o/de7834s-6515bd40-8b2c-4dc6-a843-5ac1a95a8b55.jpg?alt=media&token=96c9f834-39d8-428b-84bf-20ffe281d962";
+                "https://firebasestorage.googleapis.com/v0/b/exper-f7bbf.appspot.com/o/de7834s-6515bd40-8b2c-4dc6-a843-5ac1a95a8b55.jpg?alt=media&token=96c9f834-39d8-428b-84bf-20ffe281d962";
           }
         } else {
           photoUrl =
-              "https://firebasestorage.googleapis.com/v0/b/Exper-f7bbf.appspot.com/o/de7834s-6515bd40-8b2c-4dc6-a843-5ac1a95a8b55.jpg?alt=media&token=96c9f834-39d8-428b-84bf-20ffe281d962";
+              "https://firebasestorage.googleapis.com/v0/b/exper-f7bbf.appspot.com/o/de7834s-6515bd40-8b2c-4dc6-a843-5ac1a95a8b55.jpg?alt=media&token=96c9f834-39d8-428b-84bf-20ffe281d962";
         }
         await _firestore.collection('users').doc(cred.user!.uid).set({
           'uid': cred.user!.uid,

@@ -4866,7 +4866,7 @@
 4865:SkTextBlob::RunRecord::StorageSize\28unsigned\20int\2c\20unsigned\20int\2c\20SkTextBlob::GlyphPositioning\2c\20SkSafeMath*\29
 4866:SkTextBlob::MakeFromText\28void\20const*\2c\20unsigned\20long\2c\20SkFont\20const&\2c\20SkTextEncoding\29
 4867:SkTextBlob::MakeFromRSXform\28void\20const*\2c\20unsigned\20long\2c\20SkRSXform\20const*\2c\20SkFont\20const&\2c\20SkTextEncoding\29
-4868:SkTextBlob::Iter::experimentalNext\28SkTextBlob::Iter::ExperimentalRun*\29
+4868:SkTextBlob::Iter::experimentalNext\28SkTextBlob::Iter::experimentalRun*\29
 4869:SkTextBlob::Iter::Iter\28SkTextBlob\20const&\29
 4870:SkTaskGroup::wait\28\29
 4871:SkTaskGroup::add\28std::__2::function<void\20\28\29>\29

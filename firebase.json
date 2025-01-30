@@ -1,1 +1,34 @@
-{"hosting":{"source":".","ignore":["firebase.json","**/.*","**/node_modules/**"],"frameworksBackend":{"region":"asia-east1"}},"flutter":{"platforms":{"dart":{"lib/firebase_options.dart":{"projectId":"amentware-exper","configurations":{"web":"1:522123866552:web:c4e84d7b61f0edb2a6df4d"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "amentware-exper",
+          "appId": "1:522123866552:android:33b1467a6711bc79a6df4d",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "amentware-exper",
+          "configurations": {
+            "android": "1:522123866552:android:33b1467a6711bc79a6df4d",
+            "ios": "1:522123866552:ios:ada778b70db3823ca6df4d",
+            "web": "1:522123866552:web:6eaefbcf47349b07a6df4d"
+          }
+        }
+      }
+    }
+  },
+  "hosting": {
+    "source": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "frameworksBackend": {
+      "region": "asia-east1"
+    }
+  }
+}

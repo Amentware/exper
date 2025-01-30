@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Exper/widgets/colors.dart';
+import 'package:exper/widgets/colors.dart';
 
 import '../firebase/auth_methods.dart';
 import '../widgets/utils.dart';

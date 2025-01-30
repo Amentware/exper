@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:Exper/firebase/auth_methods.dart';
-import 'package:Exper/screens/clist.dart';
-import 'package:Exper/screens/home.dart';
-import 'package:Exper/screens/login.dart';
+import 'package:exper/firebase/auth_methods.dart';
+import 'package:exper/screens/home.dart';
+import 'package:exper/screens/login.dart';
 import '../widgets/colors.dart';
 import '../widgets/utils.dart';
 
@@ -54,7 +52,7 @@ class _SignuppageState extends State<Signuppage> {
         _isLoading = false;
       });
       // navigate to the home screen
-      Get.offAll(const Childlist(), transition: Transition.cupertino);
+      Get.offAll(const HomeScreen(), transition: Transition.cupertino);
       showSnackBar(context, "Registration Succesfully");
     } else {
       setState(() {
@@ -85,6 +83,7 @@ class _SignuppageState extends State<Signuppage> {
         child: Container(
           alignment: Alignment.bottomCenter,
           constraints: const BoxConstraints.expand(),
+          /*
           decoration: const BoxDecoration(
             image: DecorationImage(
               image: AssetImage(
@@ -93,6 +92,7 @@ class _SignuppageState extends State<Signuppage> {
               fit: BoxFit.cover,
             ),
           ),
+          */
           padding: const EdgeInsets.symmetric(horizontal: 32),
           width: double.infinity,
           child: Column(
@@ -125,7 +125,7 @@ class _SignuppageState extends State<Signuppage> {
                               : const CircleAvatar(
                                 radius: 64,
                                 backgroundImage: AssetImage(
-                                  'assets/images/de7834s-6515bd40-8b2c-4dc6-a843-5ac1a95a8b55.jpg',
+                                  'assets/images/user.jpg',
                                 ),
                               ),
                     ),

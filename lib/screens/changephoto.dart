@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'package:Exper/screens/userprofile.dart';
-import 'package:Exper/widgets/colors.dart';
+import 'package:exper/screens/userprofile.dart';
+import 'package:exper/widgets/colors.dart';
 
 import '../firebase/auth_methods.dart';
 

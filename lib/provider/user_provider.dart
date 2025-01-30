@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import '../Model/user.dart';
-import 'package:Exper/firebase/auth_methods.dart';
+import 'package:exper/firebase/auth_methods.dart';
 
 class UserProvider with ChangeNotifier {
   User? _user;

@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:Exper/widgets/colors.dart';
+import 'package:exper/widgets/colors.dart';
 
 class dummy extends StatefulWidget {
   const dummy({super.key});

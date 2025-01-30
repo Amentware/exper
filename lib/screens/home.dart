@@ -1,15 +1,11 @@
+import 'package:exper/firebase/auth_methods.dart';
+import 'package:exper/screens/login.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Exper/screens/afterdelivery.dart';
-import 'package:Exper/screens/anemiaprediction.dart';
-import 'package:Exper/screens/gdm.dart';
-import 'package:Exper/screens/riskdata.dart';
-import 'package:Exper/screens/timeline.dart';
-import 'package:Exper/screens/userprofile.dart';
-import 'package:Exper/widgets/colors.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:exper/screens/userprofile.dart';
+import 'package:exper/widgets/colors.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -35,7 +31,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    getData();
+    isLoading = false;
+    //getData();
   }
 
   getData() async {
@@ -48,56 +45,111 @@ class _HomeScreenState extends State<HomeScreen> {
               .collection('users')
               .doc(FirebaseAuth.instance.currentUser!.uid)
               .get();
-      userData = userSnap.data()!;
-      final prefs = await SharedPreferences.getInstance();
-      cid = (prefs.getString('cid'))!;
-      var childSnap =
-          await FirebaseFirestore.instance
-              .collection('child')
-              .doc(FirebaseAuth.instance.currentUser!.uid)
-              .collection('children')
-              .doc(cid)
-              .get();
-      child = childSnap.data()!;
-      DateTime firstDay = DateTime.parse(child['firstDay']);
-      DateTime dueDate = DateTime.parse(child['dueDate']);
-      DateTime now = DateTime.now();
-      final difference = now.difference(firstDay).inDays;
-      daysLeft = dueDate.difference(now).inDays + 1;
-      if (daysLeft < 0) {
-        Get.offAll(const AfterDelivery(), transition: Transition.cupertino);
-      }
-      noOfDates = (difference) - 6;
-      week = (difference / 7).floor();
-      days = (difference % 7);
-      if (days == 0) {
-        weekmeg = '$week Weeks';
+
+      if (userSnap.data() != null) {
+        userData = userSnap.data()!;
+
+        if (userData['childid'] == null) {
+          babyData = {};
+          dailytips = {};
+          riskdata = {};
+          week = 0;
+          days = 0;
+          daysLeft = 0;
+          weekmeg = '0';
+          return;
+        }
+        cid = userData['childid'];
+        try {
+          var babySnap =
+              await FirebaseFirestore.instance
+                  .collection('babyinfo')
+                  .doc(cid)
+                  .get();
+          if (babySnap.exists) {
+            babyData = babySnap.data()!;
+          } else {
+            babyData = {};
+          }
+        } catch (e) {
+          print('Error fetching baby data: $e');
+        }
+
+        try {
+          var tipsSnap =
+              await FirebaseFirestore.instance
+                  .collection('dailytips')
+                  .doc(cid)
+                  .get();
+          if (tipsSnap.exists) {
+            dailytips = tipsSnap.data()!;
+          } else {
+            dailytips = {};
+          }
+        } catch (e) {
+          print('Error fetching daily tips: $e');
+        }
+
+        try {
+          var riskSnap =
+              await FirebaseFirestore.instance
+                  .collection('risk')
+                  .doc(cid)
+                  .get();
+          if (riskSnap.exists) {
+            riskdata = riskSnap.data()!;
+          } else {
+            riskdata = {};
+          }
+        } catch (e) {
+          print('Error fetching risk data: $e');
+        }
+
+        // Calculate pregnancy metrics
+        if (userData['duedate'] != null) {
+          DateTime dueDate = userData['duedate'].toDate();
+          DateTime now = DateTime.now();
+          daysLeft = dueDate.difference(now).inDays;
+          if (daysLeft < 0) daysLeft = 0;
+
+          // Calculate the number of weeks since the start of pregnancy (assuming 40 weeks total)
+          final startOfPregnancy = dueDate.subtract(
+            const Duration(days: 280),
+          ); // 40 weeks * 7 days/week
+          final daysSinceStart = now.difference(startOfPregnancy).inDays;
+          week = (daysSinceStart / 7).floor();
+          days = daysSinceStart % 7;
+          if (week < 0) week = 0;
+          if (week > 40) week = 40;
+          if (days < 0) days = 0;
+          if (days > 6) days = 6;
+          weekmeg = 'Week $week, Day $days';
+        } else {
+          week = 0;
+          days = 0;
+          daysLeft = 0;
+          weekmeg = '0';
+        }
       } else {
-        weekmeg = '$week Weeks & $days Days';
+        userData = {};
+        babyData = {};
+        dailytips = {};
+        riskdata = {};
+        daysLeft = 0;
+        week = 0;
       }
-      var dailySnap =
-          await FirebaseFirestore.instance
-              .collection('dailyupdate')
-              .doc(noOfDates.toString())
-              .get();
-      dailytips = dailySnap.data()!;
-      var babySnap =
-          await FirebaseFirestore.instance
-              .collection('babydetails')
-              .doc(week.toString())
-              .get();
-      babyData = babySnap.data()!;
-      var risksnap =
-          await FirebaseFirestore.instance
-              .collection('Predictions')
-              .doc(cid)
-              .get();
-      riskdata = risksnap.data()!;
       setState(() {});
-    } catch (e) {}
+    } catch (e) {
+      print('Error fetching user data: $e');
+    }
     setState(() {
       isLoading = false;
     });
+  }
+
+  void signoutfunction() {
+    Get.offAll(LoginPage());
+    Authmethods().signOut();
   }
 
   String greetingMessage() {
@@ -156,578 +208,16 @@ class _HomeScreenState extends State<HomeScreen> {
                             },
                             child: CircleAvatar(
                               backgroundColor: whiteColor,
-                              backgroundImage: NetworkImage(
-                                userData['photoUrl'],
+                              backgroundImage: const AssetImage(
+                                'assets/images/user.jpg',
                               ),
+                              // Use a default asset image if photoUrl is null
                             ),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 15),
-                    //Weeks
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            children: [
-                              Container(
-                                alignment: Alignment.centerLeft,
-                                child: const Text(
-                                  'You are pregnant for',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  weekmeg,
-                                  style: const TextStyle(
-                                    fontSize: 25,
-                                    fontWeight: FontWeight.w800,
-                                    color: yellowColor,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          alignment: Alignment.centerRight,
-                          child: InkWell(
-                            onTap: () {
-                              Get.to(
-                                const TimeLine(),
-                                transition: Transition.cupertino,
-                              );
-                            },
-                            child: const Icon(
-                              Icons.calendar_month,
-                              size: 40,
-                              color: yellowColor,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    Stack(
-                      alignment: Alignment.bottomLeft,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(
-                            15,
-                          ), // Image border
-                          child: SizedBox.fromSize(
-                            // Image radius
-                            child: Image(
-                              image: AssetImage(
-                                'assets/images/babypic/pregnancy-week-$week.jpg',
-                              ),
-                            ),
-                          ),
-                        ),
-                        Container(
-                          height: 240,
-                          alignment: Alignment.bottomLeft,
-                          decoration: const ShapeDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.bottomLeft,
-                              end: Alignment.topCenter,
-                              stops: [0.2, 0.8, 1],
-                              colors: [
-                                Colors.black,
-                                Colors.black12,
-                                Colors.transparent,
-                              ],
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(15),
-                              ),
-                            ),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Row(
-                                children: [
-                                  const SizedBox(width: 10),
-                                  const Text(
-                                    'Weight: ',
-                                    style: TextStyle(
-                                      color: greydark,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                  Text(
-                                    babyData['weight']!,
-                                    style: const TextStyle(
-                                      color: whiteColor,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 5),
-                              Row(
-                                children: [
-                                  const SizedBox(width: 10),
-                                  const Text(
-                                    'Length: ',
-                                    style: TextStyle(
-                                      color: greydark,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                  Text(
-                                    babyData['length']!,
-                                    style: const TextStyle(
-                                      color: whiteColor,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Stack(
-                      children: [
-                        Column(
-                          children: [
-                            const SizedBox(height: 18),
-                            Container(
-                              padding: const EdgeInsets.all(20),
-                              alignment: Alignment.centerLeft,
-                              decoration: const ShapeDecoration(
-                                shadows: [
-                                  BoxShadow(
-                                    color: greydark,
-                                    blurRadius: 5,
-                                    spreadRadius: 2,
-                                  ),
-                                ],
-                                color: whiteColor,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.all(
-                                    Radius.circular(15),
-                                  ),
-                                ),
-                              ),
-                              //padding: const EdgeInsets.symmetric(
-                              //  vertical: 30, horizontal: 15),
-                              child: Column(
-                                children: [
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    dailytips['meg'],
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            const SizedBox(width: 20),
-                            Container(
-                              alignment: Alignment.center,
-                              padding: const EdgeInsets.all(12),
-                              decoration: const ShapeDecoration(
-                                color: blueColor,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.all(
-                                    Radius.circular(50),
-                                  ),
-                                ),
-                              ),
-                              child: const Text(
-                                'Daily Tips & Updations',
-                                style: TextStyle(
-                                  color: whiteColor,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Stack(
-                      children: [
-                        Column(
-                          children: [
-                            const SizedBox(height: 18),
-                            Container(
-                              padding: const EdgeInsets.all(20),
-                              alignment: Alignment.centerLeft,
-                              decoration: const ShapeDecoration(
-                                shadows: [
-                                  BoxShadow(
-                                    color: greydark,
-                                    blurRadius: 5,
-                                    spreadRadius: 2,
-                                  ),
-                                ],
-                                color: whiteColor,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.all(
-                                    Radius.circular(15),
-                                  ),
-                                ),
-                              ),
-                              //padding: const EdgeInsets.symmetric(
-                              //  vertical: 30, horizontal: 15),
-                              child: Column(
-                                children: [
-                                  const SizedBox(height: 10),
-                                  Stack(
-                                    children: [
-                                      Container(
-                                        height: 40,
-                                        alignment: Alignment.center,
-                                        decoration: const ShapeDecoration(
-                                          color: Color(0xffFFF0B8),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.all(
-                                              Radius.circular(50),
-                                            ),
-                                          ),
-                                        ),
-                                        child: null,
-                                      ),
-                                      Container(
-                                        height: 40,
-                                        width:
-                                            ((320 - daysLeft) / 289 * 100) /
-                                            (MediaQuery.of(
-                                              context,
-                                            ).size.width) *
-                                            1000,
-                                        alignment: Alignment.center,
-                                        decoration: const ShapeDecoration(
-                                          color: yellowColor,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.all(
-                                              Radius.circular(50),
-                                            ),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          daysLeft.toString(),
-                                          style: const TextStyle(
-                                            color: whiteColor,
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            const SizedBox(width: 20),
-                            Container(
-                              alignment: Alignment.center,
-                              padding: const EdgeInsets.all(12),
-                              decoration: const ShapeDecoration(
-                                color: lightgreen,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.all(
-                                    Radius.circular(50),
-                                  ),
-                                ),
-                              ),
-                              child: const Text(
-                                'Days Left',
-                                style: TextStyle(
-                                  color: whiteColor,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Stack(
-                      children: [
-                        Column(
-                          children: [
-                            const SizedBox(height: 18),
-                            InkWell(
-                              onTap: () {
-                                Get.to(
-                                  const MaternalRisk(),
-                                  transition: Transition.cupertino,
-                                );
-                              },
-                              child: Container(
-                                alignment: Alignment.centerLeft,
-                                decoration: const ShapeDecoration(
-                                  shadows: [
-                                    BoxShadow(
-                                      color: greydark,
-                                      blurRadius: 5,
-                                      spreadRadius: 2,
-                                    ),
-                                  ],
-                                  color: whiteColor,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.all(
-                                      Radius.circular(15),
-                                    ),
-                                  ),
-                                ),
-                                //padding: const EdgeInsets.symmetric(
-                                //  vertical: 30, horizontal: 15),
-                                child: Column(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(
-                                        15,
-                                      ), // Image border
-                                      child: SizedBox.fromSize(
-                                        child:
-                                            riskdata['MaternalRisk'] != null
-                                                ? Image(
-                                                  image: AssetImage(
-                                                    'assets/images/pngs/${riskdata['MaternalRisk']}.png',
-                                                  ),
-                                                )
-                                                : const Image(
-                                                  image: AssetImage(
-                                                    'assets/images/pngs/Frame 13.png',
-                                                  ),
-                                                ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            const SizedBox(width: 20),
-                            Container(
-                              alignment: Alignment.center,
-                              padding: const EdgeInsets.all(12),
-                              decoration: const ShapeDecoration(
-                                color: darkpink,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.all(
-                                    Radius.circular(50),
-                                  ),
-                                ),
-                              ),
-                              child: const Text(
-                                'Maternal Risk Level',
-                                style: TextStyle(
-                                  color: whiteColor,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Stack(
-                      children: [
-                        Column(
-                          children: [
-                            const SizedBox(height: 18),
-                            InkWell(
-                              onTap: () {
-                                Get.to(
-                                  const Anemiaprediction(),
-                                  transition: Transition.cupertino,
-                                );
-                              },
-                              child: Container(
-                                alignment: Alignment.centerLeft,
-                                decoration: const ShapeDecoration(
-                                  shadows: [
-                                    BoxShadow(
-                                      color: greydark,
-                                      blurRadius: 5,
-                                      spreadRadius: 2,
-                                    ),
-                                  ],
-                                  color: whiteColor,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.all(
-                                      Radius.circular(15),
-                                    ),
-                                  ),
-                                ),
-                                //padding: const EdgeInsets.symmetric(
-                                //  vertical: 30, horizontal: 15),
-                                child: Column(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(
-                                        15,
-                                      ), // Image border
-                                      child: SizedBox.fromSize(
-                                        child:
-                                            riskdata['anemiaornot'] != null
-                                                ? Image(
-                                                  image: AssetImage(
-                                                    'assets/images/pngs/anemia${riskdata['anemiaornot']}.png',
-                                                  ),
-                                                )
-                                                : const Image(
-                                                  image: AssetImage(
-                                                    'assets/images/pngs/anemia.png',
-                                                  ),
-                                                ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            const SizedBox(width: 20),
-                            Container(
-                              alignment: Alignment.center,
-                              padding: const EdgeInsets.all(12),
-                              decoration: const ShapeDecoration(
-                                color: lightgreen,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.all(
-                                    Radius.circular(50),
-                                  ),
-                                ),
-                              ),
-                              child: const Text(
-                                'Anemia Detection',
-                                style: TextStyle(
-                                  color: whiteColor,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Stack(
-                      children: [
-                        Column(
-                          children: [
-                            const SizedBox(height: 18),
-                            InkWell(
-                              onTap: () {
-                                Get.to(
-                                  const GDM(),
-                                  transition: Transition.cupertino,
-                                );
-                              },
-                              child: Container(
-                                alignment: Alignment.centerLeft,
-                                decoration: const ShapeDecoration(
-                                  shadows: [
-                                    BoxShadow(
-                                      color: greydark,
-                                      blurRadius: 5,
-                                      spreadRadius: 2,
-                                    ),
-                                  ],
-                                  color: whiteColor,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.all(
-                                      Radius.circular(15),
-                                    ),
-                                  ),
-                                ),
-                                //padding: const EdgeInsets.symmetric(
-                                //  vertical: 30, horizontal: 15),
-                                child: Column(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(
-                                        15,
-                                      ), // Image border
-                                      child: SizedBox.fromSize(
-                                        child:
-                                            riskdata['gdmornot'] != null
-                                                ? Image(
-                                                  image: AssetImage(
-                                                    'assets/images/pngs/gdm${riskdata['gdmornot']}.png',
-                                                  ),
-                                                )
-                                                : const Image(
-                                                  image: AssetImage(
-                                                    'assets/images/pngs/Frame 12.png',
-                                                  ),
-                                                ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            const SizedBox(width: 20),
-                            Container(
-                              alignment: Alignment.center,
-                              padding: const EdgeInsets.all(12),
-                              decoration: const ShapeDecoration(
-                                color: purple,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.all(
-                                    Radius.circular(50),
-                                  ),
-                                ),
-                              ),
-                              child: const Text(
-                                'GDM Status',
-                                style: TextStyle(
-                                  color: whiteColor,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 50),
                   ],
                 ),
               ),

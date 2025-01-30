@@ -1,9 +1,5 @@
-import 'package:flutter/src/foundation/key.dart';
-import 'package:flutter/src/widgets/container.dart';
-import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:Exper/screens/login.dart';
 import '../firebase/auth_methods.dart';
 import '../widgets/colors.dart';
 import '../widgets/utils.dart';
@@ -67,6 +63,7 @@ class _ForgetPasswordState extends State<ForgetPassword> {
         child: Container(
           alignment: Alignment.bottomCenter,
           constraints: const BoxConstraints.expand(),
+          /*
           decoration: const BoxDecoration(
             image: DecorationImage(
               image: AssetImage(
@@ -75,6 +72,7 @@ class _ForgetPasswordState extends State<ForgetPassword> {
               fit: BoxFit.cover,
             ),
           ),
+          */
           padding: const EdgeInsets.symmetric(horizontal: 32),
           width: double.infinity,
           child: Column(

@@ -1,6 +1,6 @@
 {
-    "name": "Exper",
-    "short_name": "Exper",
+    "name": "exper",
+    "short_name": "exper",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

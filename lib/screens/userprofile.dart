@@ -3,12 +3,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_navigation/get_navigation.dart';
-import 'package:Exper/screens/changemail.dart';
-import 'package:Exper/screens/changename.dart';
-import 'package:Exper/screens/changepassword.dart';
-import 'package:Exper/screens/changephoto.dart';
-import 'package:Exper/screens/login.dart';
-import 'package:Exper/widgets/colors.dart';
+import 'package:exper/screens/changemail.dart';
+import 'package:exper/screens/changename.dart';
+import 'package:exper/screens/changepassword.dart';
+import 'package:exper/screens/changephoto.dart';
+import 'package:exper/screens/login.dart';
+import 'package:exper/widgets/colors.dart';
 import '../firebase/auth_methods.dart';
 
 class UserProfile extends StatefulWidget {
@@ -45,6 +45,7 @@ class _UserProfileState extends State<UserProfile> {
             return SafeArea(
               child: Stack(
                 children: [
+                  /*
                   Container(
                     decoration: const BoxDecoration(
                       image: DecorationImage(
@@ -55,6 +56,7 @@ class _UserProfileState extends State<UserProfile> {
                       ),
                     ),
                   ),
+                  */
                   SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Container(
@@ -83,8 +85,8 @@ class _UserProfileState extends State<UserProfile> {
                                   width: 80,
                                   height: 80,
                                   child: CircleAvatar(
-                                    backgroundImage: NetworkImage(
-                                      snap.data!['photoUrl'],
+                                    backgroundImage: const AssetImage(
+                                      'assets/images/user.jpg',
                                     ),
                                     backgroundColor: whiteColor,
                                   ),

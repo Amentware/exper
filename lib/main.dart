@@ -1,11 +1,11 @@
-import 'package:Exper/firebase_options.dart';
+import 'package:exper/firebase_options.dart';
+import 'package:exper/screens/home.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:Exper/screens/clist.dart';
-import 'package:Exper/screens/login.dart';
-import 'package:Exper/widgets/colors.dart';
+import 'package:exper/screens/login.dart';
+import 'package:exper/widgets/colors.dart';
 import 'package:get/get.dart';
 
 void main() async {
@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
     );
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Exper',
+      title: 'exper',
       theme: ThemeData(primarySwatch: Palette.kToDark),
       home: StreamBuilder(
         stream: FirebaseAuth.instance.authStateChanges(),
@@ -36,7 +36,7 @@ class MyApp extends StatelessWidget {
             // Checking if the snapshot has any data or not
             if (snapshot.hasData) {
               // if snapshot has data which means user is logged in then we check the width of screen and accordingly display the screen layout
-              return const Childlist();
+              return const HomeScreen();
             } else if (snapshot.hasError) {
               return Center(child: Text('${snapshot.error}'));
             }

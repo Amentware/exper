@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/container.dart';
-import 'package:flutter/src/widgets/framework.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:Exper/firebase/child.dart';
+import 'package:exper/firebase/child.dart';
 
 import '../widgets/colors.dart';
 import '../widgets/utils.dart';

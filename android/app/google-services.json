@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "522123866552",
+    "project_id": "amentware-exper",
+    "storage_bucket": "amentware-exper.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:522123866552:android:33b1467a6711bc79a6df4d",
+        "android_client_info": {
+          "package_name": "com.example.exper"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBeYc7g03ao-RE2jQgR7WQz_YTg_x1bC_4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

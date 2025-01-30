@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -12,9 +11,7 @@ pickImage(ImageSource source) async {
 }
 
 showSnackBar(BuildContext context, String text) {
-  return ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(text),
-    ),
-  );
+  return ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text(text)));
 }

@@ -21,15 +21,9 @@ class DefaultFirebaseOptions {
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for android - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       case TargetPlatform.macOS:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for macos - '
@@ -54,11 +48,28 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyAu657Xkylg_vFM0KSto_yajQuFjrTjrD4',
-    appId: '1:522123866552:web:c4e84d7b61f0edb2a6df4d',
+    appId: '1:522123866552:web:6eaefbcf47349b07a6df4d',
     messagingSenderId: '522123866552',
     projectId: 'amentware-exper',
     authDomain: 'amentware-exper.firebaseapp.com',
     storageBucket: 'amentware-exper.firebasestorage.app',
-    measurementId: 'G-D6EP21NGGF',
+    measurementId: 'G-9XD9W0PDN7',
+  );
+
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'AIzaSyBeYc7g03ao-RE2jQgR7WQz_YTg_x1bC_4',
+    appId: '1:522123866552:android:33b1467a6711bc79a6df4d',
+    messagingSenderId: '522123866552',
+    projectId: 'amentware-exper',
+    storageBucket: 'amentware-exper.firebasestorage.app',
+  );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyBwYy9neTkJox9EXd1CcffatQZFUwQ6lcU',
+    appId: '1:522123866552:ios:ada778b70db3823ca6df4d',
+    messagingSenderId: '522123866552',
+    projectId: 'amentware-exper',
+    storageBucket: 'amentware-exper.firebasestorage.app',
+    iosBundleId: 'com.example.exper',
   );
 }

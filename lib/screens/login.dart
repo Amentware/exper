@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart';
-import 'package:Exper/firebase/auth_methods.dart';
-import 'package:Exper/screens/clist.dart';
-import 'package:Exper/screens/forgetpassword.dart';
-import 'package:Exper/screens/home.dart';
-import 'package:Exper/screens/signup.dart';
-import 'package:Exper/widgets/utils.dart';
+import 'package:exper/firebase/auth_methods.dart';
+import 'package:exper/screens/forgetpassword.dart';
+import 'package:exper/screens/home.dart';
+import 'package:exper/screens/signup.dart';
+import 'package:exper/widgets/utils.dart';
 
 import '../widgets/colors.dart';
 
@@ -43,7 +41,7 @@ class _LoginPageState extends State<LoginPage> {
         _isLoading = false;
       });
       // navigate to the home screen
-      Get.offAll(const Childlist(), transition: Transition.cupertino);
+      Get.offAll(const HomeScreen(), transition: Transition.cupertino);
       showSnackBar(context, "Login Succesfully");
     } else {
       setState(() {
@@ -70,14 +68,15 @@ class _LoginPageState extends State<LoginPage> {
         child: Container(
           alignment: Alignment.bottomCenter,
           constraints: const BoxConstraints.expand(),
+          /*
           decoration: const BoxDecoration(
             image: DecorationImage(
               image: AssetImage(
-                'assets/images/backgrounds/Android Large - 1.png',
+                'assets/images/backgrounds/Android Large - 2.png',
               ),
               fit: BoxFit.cover,
             ),
-          ),
+          ),*/
           padding: const EdgeInsets.symmetric(horizontal: 32),
           width: double.infinity,
           child: Column(
@@ -95,7 +94,7 @@ class _LoginPageState extends State<LoginPage> {
               Container(
                 alignment: Alignment.topLeft,
                 child: const Text(
-                  'Enter your Email and Password to login',
+                  'Enter your email and password to login',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                 ),
               ),
@@ -104,7 +103,7 @@ class _LoginPageState extends State<LoginPage> {
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
-                  hintText: 'Your Email',
+                  hintText: 'Email',
                   fillColor: const Color.fromARGB(255, 248, 248, 248),
                   filled: true,
                   prefixIcon: const Icon(
