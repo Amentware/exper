@@ -46,7 +46,7 @@ class ForgetPassword extends StatelessWidget {
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
-                  hintText: 'Your Email',
+                  hintText: 'Email',
                   fillColor: const Color.fromARGB(255, 248, 248, 248),
                   filled: true,
                   prefixIcon: const Icon(
