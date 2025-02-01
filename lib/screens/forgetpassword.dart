@@ -27,13 +27,19 @@ class ForgetPassword extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               const SizedBox(height: 100),
-              const Text(
-                'Password',
-                style: TextStyle(fontSize: 45, fontWeight: FontWeight.w900),
+              const Align(
+                alignment: Alignment.topLeft,
+                child: Text(
+                  'Password',
+                  style: TextStyle(fontSize: 45, fontWeight: FontWeight.w900),
+                ),
               ),
-              const Text(
-                'Enter Email To Reset Your Password',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+              const Align(
+                alignment: Alignment.topLeft,
+                child: Text(
+                  'Enter Email To Reset Your Password',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                ),
               ),
               const SizedBox(height: 25),
               TextField(
