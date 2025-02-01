@@ -1,55 +1,28 @@
 import 'package:exper/controllers/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'home_screen.dart';
 import 'login_screen.dart';
 import '../widgets/colors.dart';
-import '../widgets/utils.dart';
 
-class SignUpPage extends StatefulWidget {
+class SignUpPage extends StatelessWidget {
   const SignUpPage({super.key});
 
   @override
-  State<SignUpPage> createState() => _SignUpPageState();
-}
-
-class _SignUpPageState extends State<SignUpPage> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _usernameController = TextEditingController();
-  final AuthController authController = Get.find<AuthController>();
-  bool _isLoading = false;
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    _usernameController.dispose();
-    super.dispose();
-  }
-
-  void signUpFunction() async {
-    FocusManager.instance.primaryFocus?.unfocus();
-    setState(() => _isLoading = true);
-
-    String res = await authController.signUp(
-      _usernameController.text,
-      _emailController.text,
-      _passwordController.text,
-    );
-
-    setState(() => _isLoading = false);
-
-    if (res == "success") {
-      Get.offAll(HomeScreen(), transition: Transition.cupertino);
-      showSnackBar(context, "Registration Successful");
-    } else {
-      showSnackBar(context, res);
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final TextEditingController _emailController = TextEditingController();
+    final TextEditingController _passwordController = TextEditingController();
+    final TextEditingController _usernameController = TextEditingController();
+    final AuthController authController = Get.find<AuthController>();
+
+    void signUpFunction() async {
+      FocusManager.instance.primaryFocus?.unfocus();
+      await authController.signUp(
+        _usernameController.text,
+        _emailController.text,
+        _passwordController.text,
+      );
+    }
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: SafeArea(
@@ -59,14 +32,25 @@ class _SignUpPageState extends State<SignUpPage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 100),
-              const Text("Let's Start",
-                  style: TextStyle(fontSize: 45, fontWeight: FontWeight.w900)),
+              const Align(
+                alignment: Alignment.topLeft,
+                child: Text(
+                  'Welcome',
+                  style: TextStyle(fontSize: 45, fontWeight: FontWeight.w900),
+                ),
+              ),
+              const Align(
+                alignment: Alignment.topLeft,
+                child: Text(
+                  'Enter your email and password to login',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+              ),
               const SizedBox(height: 25),
-              _buildTextField(_usernameController, 'Your Name',
-                  Icons.account_circle_outlined),
-              const SizedBox(height: 15),
               _buildTextField(
-                  _emailController, 'Your Email', Icons.email_outlined,
+                  _usernameController, 'Name', Icons.account_circle_outlined),
+              const SizedBox(height: 15),
+              _buildTextField(_emailController, 'Email', Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress),
               const SizedBox(height: 15),
               _buildTextField(
@@ -85,8 +69,12 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _buildButton("Sign Up", orangeColor, signUpFunction,
-                        isLoading: _isLoading),
+                    child: Obx(() {
+                      // Reactively check if loading is true
+                      return _buildButton(
+                          "Sign Up", orangeColor, signUpFunction,
+                          isLoading: authController.isLoading.value);
+                    }),
                   ),
                 ],
               ),
@@ -132,8 +120,6 @@ class _SignUpPageState extends State<SignUpPage> {
           decoration: BoxDecoration(
             color: isOutlined ? Colors.white : color,
             borderRadius: BorderRadius.circular(50),
-            //border:
-            //isOutlined ? Border.all(color: orangeColor, width: 2) : null,
           ),
           child: isLoading
               ? const SizedBox(

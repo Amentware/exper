@@ -3,50 +3,25 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'signup_screen.dart';
 import 'forgetpassword.dart';
-import 'home_screen.dart';
 import '../widgets/colors.dart';
-import '../widgets/utils.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
-}
-
-class _LoginPageState extends State<LoginPage> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final AuthController authController = Get.find<AuthController>();
-  bool _isLoading = false;
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  void loginFunction() async {
-    FocusManager.instance.primaryFocus?.unfocus();
-    _isLoading = true;
-    setState(() {});
-
-    await authController.login(_emailController.text, _passwordController.text);
-
-    _isLoading = false;
-    setState(() {});
-
-    if (authController.user.value != null) {
-      Get.offAll(HomeScreen(), transition: Transition.cupertino);
-      showSnackBar(context, "Login Successful");
-    } else {
-      showSnackBar(context, "Login Failed. Check credentials.");
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final TextEditingController _emailController = TextEditingController();
+    final TextEditingController _passwordController = TextEditingController();
+    final AuthController authController = Get.find<AuthController>();
+
+    void loginFunction() async {
+      FocusManager.instance.primaryFocus?.unfocus();
+
+      // Show loading spinner while waiting for login response
+      await authController.login(
+          _emailController.text, _passwordController.text);
+    }
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: SafeArea(
@@ -138,19 +113,21 @@ class _LoginPageState extends State<LoginPage> {
                           borderRadius: BorderRadius.circular(50),
                           color: blueColor,
                         ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                height: 16.0,
-                                width: 16.0,
-                                child: CircularProgressIndicator(
-                                    color: Colors.white, strokeWidth: 4),
-                              )
-                            : const Text(
-                                'Login',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w900),
-                              ),
+                        child: Obx(
+                          () => authController.isLoading.value
+                              ? const SizedBox(
+                                  height: 16.0,
+                                  width: 16.0,
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white, strokeWidth: 4),
+                                )
+                              : const Text(
+                                  'Login',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w900),
+                                ),
+                        ),
                       ),
                     ),
                   ),
@@ -158,8 +135,8 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 10),
               InkWell(
-                onTap: () => Get.to(const ForgetPassword(),
-                    transition: Transition.cupertino),
+                onTap: () =>
+                    Get.to(ForgetPassword(), transition: Transition.cupertino),
                 child: const Align(
                   alignment: Alignment.centerRight,
                   child: Text(

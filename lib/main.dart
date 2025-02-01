@@ -27,8 +27,11 @@ class MyApp extends StatelessWidget {
     );
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'exper',
-      theme: ThemeData(primarySwatch: Palette.kToDark),
+      title: 'Exper',
+      theme: ThemeData(
+        primarySwatch: Palette.kToDark,
+        scaffoldBackgroundColor: Colors.white,
+      ),
       home: AuthWrapper(),
     );
   }

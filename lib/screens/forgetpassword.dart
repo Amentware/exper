@@ -1,57 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../firebase/auth_methods.dart';
+import '../controllers/auth_controller.dart'; // Assuming AuthController is in controllers folder
 import '../widgets/colors.dart';
 import '../widgets/utils.dart';
 
-class ForgetPassword extends StatefulWidget {
-  const ForgetPassword({super.key});
-
-  @override
-  State<ForgetPassword> createState() => _ForgetPasswordState();
-}
-
-class _ForgetPasswordState extends State<ForgetPassword> {
+class ForgetPassword extends StatelessWidget {
   final TextEditingController _emailController = TextEditingController();
-  bool _isLoading = false;
-  @override
-  void dispose() {
-    super.dispose();
-    _emailController.dispose();
-  }
+  final AuthController authController =
+      Get.find<AuthController>(); // Get instance of AuthController
 
-  void forgetpasswordfunction() async {
+  void forgetPasswordFunction() async {
     FocusManager.instance.primaryFocus?.unfocus();
-    setState(() {
-      _isLoading = true;
-    });
-    String res = await Authmethods().forgetPassword(
-      email: _emailController.text,
-    );
-    print(res);
-    if (res ==
-        "[firebase_auth/invalid-email] The email address is badly formatted.") {
-      showSnackBar(context, "The email address is badly formatted");
-    } else if (res ==
-        "[firebase_auth/user-not-found] There is no user record corresponding to this identifier. The user may have been deleted.") {
-      showSnackBar(
-        context,
-        "There is no user record corresponding to this identifier. The user may have been deleted.",
-      );
+    String res = await authController.forgetPassword(_emailController.text);
+    if (res == "Password reset link sent to your email!") {
+      showSnackBar(Get.context!, res);
     } else {
-      showSnackBar(context, res);
-    }
-    if (res == 'success') {
-      setState(() {
-        _isLoading = false;
-      });
-      // navigate to the login screen
-      showSnackBar(context, "Password reset link send to your Email");
-    } else {
-      setState(() {
-        _isLoading = false;
-      });
-      showSnackBar(context, res);
+      showSnackBar(Get.context!, res);
     }
   }
 
@@ -62,17 +26,6 @@ class _ForgetPasswordState extends State<ForgetPassword> {
       body: SafeArea(
         child: Container(
           alignment: Alignment.bottomCenter,
-          constraints: const BoxConstraints.expand(),
-          /*
-          decoration: const BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage(
-                'assets/images/backgrounds/Android Large - 4.png',
-              ),
-              fit: BoxFit.cover,
-            ),
-          ),
-          */
           padding: const EdgeInsets.symmetric(horizontal: 32),
           width: double.infinity,
           child: Column(
@@ -80,19 +33,13 @@ class _ForgetPasswordState extends State<ForgetPassword> {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               const SizedBox(height: 100),
-              Container(
-                alignment: Alignment.topLeft,
-                child: const Text(
-                  'Password',
-                  style: TextStyle(fontSize: 45, fontWeight: FontWeight.w900),
-                ),
+              const Text(
+                'Password',
+                style: TextStyle(fontSize: 45, fontWeight: FontWeight.w900),
               ),
-              Container(
-                alignment: Alignment.topLeft,
-                child: const Text(
-                  'Enter Email To Reset Your Password',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                ),
+              const Text(
+                'Enter Email To Reset Your Password',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 25),
               TextField(
@@ -152,7 +99,7 @@ class _ForgetPasswordState extends State<ForgetPassword> {
                       child: InkWell(
                         splashColor: const Color.fromARGB(255, 251, 138, 38),
                         borderRadius: BorderRadius.circular(50),
-                        onTap: forgetpasswordfunction,
+                        onTap: forgetPasswordFunction,
                         child: Container(
                           alignment: Alignment.center,
                           padding: const EdgeInsets.all(15),
@@ -163,23 +110,26 @@ class _ForgetPasswordState extends State<ForgetPassword> {
                               ),
                             ),
                           ),
-                          child:
-                              !_isLoading
-                                  ? const Text(
-                                    'Reset',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  )
-                                  : const SizedBox(
-                                    height: 16.0,
-                                    width: 16.0,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 4,
-                                    ),
-                                  ),
+                          child: Obx(() {
+                            if (authController.isLoading.value) {
+                              return const SizedBox(
+                                height: 16.0,
+                                width: 16.0,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 4,
+                                ),
+                              );
+                            } else {
+                              return const Text(
+                                'Reset',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              );
+                            }
+                          }),
                         ),
                       ),
                     ),
