@@ -1,4 +1,4 @@
-import 'package:exper/controllers/auth_controller.dart';
+import 'package:Exper/controllers/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'login_screen.dart';
@@ -24,6 +24,7 @@ class SignUpPage extends StatelessWidget {
     }
 
     return Scaffold(
+      appBar: AppBar(),
       resizeToAvoidBottomInset: false,
       body: SafeArea(
         child: Padding(
@@ -64,7 +65,7 @@ class SignUpPage extends StatelessWidget {
                         "Login",
                         orangeColor,
                         () => Get.offAll(const LoginPage(),
-                            transition: Transition.leftToRightWithFade),
+                            transition: Transition.leftToRight),
                         isOutlined: true),
                   ),
                   const SizedBox(width: 10),

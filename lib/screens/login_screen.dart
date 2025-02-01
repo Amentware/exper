@@ -1,4 +1,4 @@
-import 'package:exper/controllers/auth_controller.dart';
+import 'package:Exper/controllers/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'signup_screen.dart';
@@ -23,6 +23,7 @@ class LoginPage extends StatelessWidget {
     }
 
     return Scaffold(
+      appBar: AppBar(),
       resizeToAvoidBottomInset: false,
       body: SafeArea(
         child: Padding(
@@ -85,7 +86,7 @@ class LoginPage extends StatelessWidget {
                     child: InkWell(
                       borderRadius: BorderRadius.circular(50),
                       onTap: () => Get.offAll(SignUpPage(),
-                          transition: Transition.rightToLeftWithFade),
+                          transition: Transition.rightToLeft),
                       child: Container(
                         alignment: Alignment.center,
                         padding: const EdgeInsets.all(15),
@@ -141,8 +142,8 @@ class LoginPage extends StatelessWidget {
                 child: InkWell(
                   onTap: () => Get.to(
                     ForgetPassword(),
-                    transition: Transition
-                        .rightToLeftWithFade, // Using Cupertino transition
+                    transition:
+                        Transition.rightToLeft, // Using Cupertino transition
                   ),
                   splashColor:
                       Colors.blue.withOpacity(0.2), // Optional splash color

@@ -8,18 +8,34 @@ import '../screens/login_screen.dart';
 class AuthController extends GetxController {
   FirebaseAuth _auth = FirebaseAuth.instance;
   Rx<User?> user = Rx<User?>(FirebaseAuth.instance.currentUser);
-  RxBool isLoading = false.obs; // Reactive loading state
+  RxBool isLoading = false.obs;
+  RxString userName = ''.obs; // Reactive username
 
   @override
   void onInit() {
     super.onInit();
     user.bindStream(_auth.authStateChanges());
+    ever(user,
+        (_) => fetchUserData()); // Fetch user data when auth state changes
   }
 
-  // Sign up with email & password
-  Future<String> signUp(String username, String email, String password) async {
+  // Fetch user data from Firestore
+  void fetchUserData() async {
+    if (user.value != null) {
+      DocumentSnapshot userData = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.value!.uid)
+          .get();
+      userName.value = userData['username'] ?? 'User';
+    } else {
+      userName.value = '';
+    }
+  }
+
+  // Sign up
+  Future<void> signUp(String username, String email, String password) async {
     try {
-      isLoading.value = true; // Set loading to true during sign-up
+      isLoading.value = true;
       UserCredential cred = await _auth.createUserWithEmailAndPassword(
           email: email, password: password);
 
@@ -32,83 +48,60 @@ class AuthController extends GetxController {
         'uid': cred.user!.uid,
       });
 
-      isLoading.value = false; // Set loading to false after operation
+      isLoading.value = false;
       Get.offAll(HomeScreen());
-      return "success";
     } catch (e) {
-      isLoading.value = false; // Set loading to false if error occurs
-      Get.snackbar(
-        "Sign Up Error",
-        e.toString(),
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white, // Set background color to white
-        colorText: Colors.black, // Set text color to black
-        snackStyle: SnackStyle.GROUNDED, // Optional style for a grounded look
-      );
-      return e.toString();
+      isLoading.value = false;
+      showErrorSnackbar("Sign Up Error", e.toString());
     }
   }
 
   // Login
   Future<void> login(String email, String password) async {
     try {
-      isLoading.value = true; // Set loading to true during login
+      isLoading.value = true;
       await _auth.signInWithEmailAndPassword(email: email, password: password);
-      isLoading.value = false; // Set loading to false after login
+      isLoading.value = false;
       Get.offAll(HomeScreen());
-      Get.snackbar(
-        "Login Successful",
-        "You have successfully logged in.",
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white, // Set background color to white
-        colorText: Colors.black, // Set text color to black
-        snackStyle: SnackStyle.GROUNDED, // Optional: makes it grounded
-      );
     } catch (e) {
-      isLoading.value = false; // Set loading to false if error occurs
-      Get.snackbar(
-        "Login Error",
-        e.toString(),
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white, // Set background color to white
-        colorText: Colors.black, // Set text color to black
-        snackStyle: SnackStyle.GROUNDED, // Optional: grounded look
-      );
+      isLoading.value = false;
+      showErrorSnackbar("Login Error", e.toString());
     }
   }
 
   // Logout
   void logout() async {
     await _auth.signOut();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Get.offAll(LoginPage());
-    });
+    Get.offAll(LoginPage());
   }
 
   // Forgot Password
   Future<void> forgetPassword(String email) async {
     try {
-      isLoading.value = true; // Set loading to true
-      await _auth.sendPasswordResetEmail(email: email); // Send reset email
-      isLoading.value = false; // Set loading to false after operation
+      isLoading.value = true;
+      await _auth.sendPasswordResetEmail(email: email);
+      isLoading.value = false;
       Get.snackbar(
-        "Reset mail Send Successful",
-        "we have send a reset mail successfully.",
+        "Reset Mail Sent",
+        "A password reset link has been sent to your email.",
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white, // Set background color to white
-        colorText: Colors.black, // Set text color to black
-        snackStyle: SnackStyle.GROUNDED, // Optional: makes it grounded
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
       );
-    } on FirebaseAuthException catch (e) {
-      isLoading.value = false; // Set loading to false if error occurs
-      Get.snackbar(
-        "Error",
-        e.message ?? "An unknown error occurred.",
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
-        snackStyle: SnackStyle.GROUNDED,
-      );
+    } catch (e) {
+      isLoading.value = false;
+      showErrorSnackbar("Error", e.toString());
     }
+  }
+
+  // Utility method for displaying errors
+  void showErrorSnackbar(String title, String message) {
+    Get.snackbar(
+      title,
+      message,
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: Colors.redAccent,
+      colorText: Colors.white,
+    );
   }
 }
