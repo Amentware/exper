@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/auth_controller.dart'; // Assuming AuthController is in controllers folder
 import '../widgets/colors.dart';
-import '../widgets/utils.dart';
 
 class ForgetPassword extends StatelessWidget {
   final TextEditingController _emailController = TextEditingController();
@@ -11,12 +10,7 @@ class ForgetPassword extends StatelessWidget {
 
   void forgetPasswordFunction() async {
     FocusManager.instance.primaryFocus?.unfocus();
-    String res = await authController.forgetPassword(_emailController.text);
-    if (res == "Password reset link sent to your email!") {
-      showSnackBar(Get.context!, res);
-    } else {
-      showSnackBar(Get.context!, res);
-    }
+    await authController.forgetPassword(_emailController.text);
   }
 
   @override

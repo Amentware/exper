@@ -35,14 +35,14 @@ class SignUpPage extends StatelessWidget {
               const Align(
                 alignment: Alignment.topLeft,
                 child: Text(
-                  'Welcome',
+                  "Let's Start",
                   style: TextStyle(fontSize: 45, fontWeight: FontWeight.w900),
                 ),
               ),
               const Align(
                 alignment: Alignment.topLeft,
                 child: Text(
-                  'Enter your email and password to login',
+                  'Enter personal details to start savingggg',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                 ),
               ),

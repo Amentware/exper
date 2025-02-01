@@ -40,7 +40,7 @@ class AuthController extends GetxController {
       Get.snackbar(
         "Sign Up Error",
         e.toString(),
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.white, // Set background color to white
         colorText: Colors.black, // Set text color to black
         snackStyle: SnackStyle.GROUNDED, // Optional style for a grounded look
@@ -59,7 +59,7 @@ class AuthController extends GetxController {
       Get.snackbar(
         "Login Successful",
         "You have successfully logged in.",
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.white, // Set background color to white
         colorText: Colors.black, // Set text color to black
         snackStyle: SnackStyle.GROUNDED, // Optional: makes it grounded
@@ -69,7 +69,7 @@ class AuthController extends GetxController {
       Get.snackbar(
         "Login Error",
         e.toString(),
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.white, // Set background color to white
         colorText: Colors.black, // Set text color to black
         snackStyle: SnackStyle.GROUNDED, // Optional: grounded look
@@ -86,23 +86,29 @@ class AuthController extends GetxController {
   }
 
   // Forgot Password
-  Future<String> forgetPassword(String email) async {
+  Future<void> forgetPassword(String email) async {
     try {
       isLoading.value = true; // Set loading to true
       await _auth.sendPasswordResetEmail(email: email); // Send reset email
       isLoading.value = false; // Set loading to false after operation
-      return "Password reset link sent to your email!";
+      Get.snackbar(
+        "Reset mail Send Successful",
+        "we have send a reset mail successfully.",
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.white, // Set background color to white
+        colorText: Colors.black, // Set text color to black
+        snackStyle: SnackStyle.GROUNDED, // Optional: makes it grounded
+      );
     } on FirebaseAuthException catch (e) {
       isLoading.value = false; // Set loading to false if error occurs
       Get.snackbar(
         "Error",
         e.message ?? "An unknown error occurred.",
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.white,
         colorText: Colors.black,
         snackStyle: SnackStyle.GROUNDED,
       );
-      return e.message ?? "An unknown error occurred.";
     }
   }
 }

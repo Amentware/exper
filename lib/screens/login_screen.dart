@@ -42,7 +42,7 @@ class LoginPage extends StatelessWidget {
               const Align(
                 alignment: Alignment.topLeft,
                 child: Text(
-                  'Enter your email and password to login',
+                  'Enter email and password to login',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                 ),
               ),
@@ -134,6 +134,40 @@ class LoginPage extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 10),
+              Container(
+                alignment:
+                    Alignment.centerRight, // Align the container to the right
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: InkWell(
+                  onTap: () => Get.to(
+                    ForgetPassword(),
+                    transition:
+                        Transition.cupertino, // Using Cupertino transition
+                  ),
+                  splashColor:
+                      Colors.blue.withOpacity(0.2), // Optional splash color
+                  borderRadius: BorderRadius.circular(
+                      30), // Make splash round by giving border radius
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(
+                        30), // Round the corners of the child widget
+                    child: const Padding(
+                      padding:
+                          EdgeInsets.symmetric(vertical: 4.0, horizontal: 10),
+                      child: Text(
+                        'Forgot Password?',
+                        style: TextStyle(
+                          color: Colors.blue, // Set the text color
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              )
+
+/*
               InkWell(
                 onTap: () =>
                     Get.to(ForgetPassword(), transition: Transition.cupertino),
@@ -148,6 +182,7 @@ class LoginPage extends StatelessWidget {
                   ),
                 ),
               ),
+              */
             ],
           ),
         ),
