@@ -1,16 +1,16 @@
+import 'package:exper/controllers/auth_controller.dart';
 import 'package:exper/firebase_options.dart';
-import 'package:exper/screens/home.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:exper/screens/home_screen.dart';
+import 'package:exper/screens/login_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:exper/screens/login.dart';
-import 'package:exper/widgets/colors.dart';
 import 'package:get/get.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  Get.put(AuthController()); // Initialize Auth Controller
   runApp(const MyApp());
 }
 
@@ -29,29 +29,18 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'exper',
       theme: ThemeData(primarySwatch: Palette.kToDark),
-      home: StreamBuilder(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.active) {
-            // Checking if the snapshot has any data or not
-            if (snapshot.hasData) {
-              // if snapshot has data which means user is logged in then we check the width of screen and accordingly display the screen layout
-              return const HomeScreen();
-            } else if (snapshot.hasError) {
-              return Center(child: Text('${snapshot.error}'));
-            }
-          }
-          // means connection to future hasnt been made yet
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: blueColor),
-            );
-          }
-
-          return LoginPage();
-        },
-      ),
+      home: AuthWrapper(),
     );
+  }
+}
+
+class AuthWrapper extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final authController = Get.find<AuthController>();
+      return authController.user.value != null ? HomeScreen() : LoginPage();
+    });
   }
 }
 
