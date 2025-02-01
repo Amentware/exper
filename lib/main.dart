@@ -10,7 +10,13 @@ import 'package:get/get.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  Get.put(AuthController()); // Initialize Auth Controller
+  Get.put(AuthController()); // Initialize Auth Controllers
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.white, // Set status bar color to white
+      statusBarIconBrightness: Brightness.dark, // Set status bar icons to dark
+    ),
+  );
   runApp(const MyApp());
 }
 
@@ -19,12 +25,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.white,
-        statusBarIconBrightness: Brightness.dark,
-      ),
-    );
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Exper',

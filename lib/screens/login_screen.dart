@@ -84,8 +84,8 @@ class LoginPage extends StatelessWidget {
                   Expanded(
                     child: InkWell(
                       borderRadius: BorderRadius.circular(50),
-                      onTap: () => Get.to(SignUpPage(),
-                          transition: Transition.cupertino),
+                      onTap: () => Get.offAll(SignUpPage(),
+                          transition: Transition.rightToLeftWithFade),
                       child: Container(
                         alignment: Alignment.center,
                         padding: const EdgeInsets.all(15),
@@ -141,8 +141,8 @@ class LoginPage extends StatelessWidget {
                 child: InkWell(
                   onTap: () => Get.to(
                     ForgetPassword(),
-                    transition:
-                        Transition.cupertino, // Using Cupertino transition
+                    transition: Transition
+                        .rightToLeftWithFade, // Using Cupertino transition
                   ),
                   splashColor:
                       Colors.blue.withOpacity(0.2), // Optional splash color

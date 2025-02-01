@@ -63,8 +63,8 @@ class SignUpPage extends StatelessWidget {
                     child: _buildButton(
                         "Login",
                         orangeColor,
-                        () => Get.off(const LoginPage(),
-                            transition: Transition.cupertino),
+                        () => Get.offAll(const LoginPage(),
+                            transition: Transition.leftToRightWithFade),
                         isOutlined: true),
                   ),
                   const SizedBox(width: 10),
