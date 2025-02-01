@@ -24,7 +24,6 @@ class SignUpPage extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(),
       resizeToAvoidBottomInset: false,
       body: SafeArea(
         child: Padding(
@@ -32,7 +31,7 @@ class SignUpPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 60),
+              const SizedBox(height: 100),
               const Align(
                 alignment: Alignment.topLeft,
                 child: Text(

@@ -10,8 +10,17 @@ import 'package:get/get.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  Get.put(AuthController()); // Initialize Auth Controllers
+  Get.put(AuthController()); // Initialize AuthController
 
+  // Set status bar color to white and icons to black
+  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+    statusBarColor: Colors.white, // Background color of the status bar
+    statusBarIconBrightness: Brightness.dark, // Icons/text in black
+    systemNavigationBarColor:
+        Colors.white, // Optional: Makes bottom nav bar white
+    systemNavigationBarIconBrightness:
+        Brightness.dark, // Makes bottom icons black
+  ));
   runApp(const MyApp());
 }
 
@@ -22,14 +31,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'exper',
+      title: 'Exper',
       theme: ThemeData(
-        primarySwatch: Palette.kToDark,
+        primarySwatch: PaletteWhite.kToWhite,
         scaffoldBackgroundColor: Colors.white,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white,
-          iconTheme: IconThemeData(color: Colors.black),
-        ),
       ),
       home: AuthWrapper(),
     );
@@ -39,8 +44,8 @@ class MyApp extends StatelessWidget {
 class AuthWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final authController = Get.find<AuthController>();
     return Obx(() {
-      final authController = Get.find<AuthController>();
       return authController.user.value != null ? HomeScreen() : LoginPage();
     });
   }
@@ -48,18 +53,36 @@ class AuthWrapper extends StatelessWidget {
 
 class Palette {
   static const MaterialColor kToDark = MaterialColor(
-    0xff0085FF, // 0% comes in here, this will be color picked if no shade is selected when defining a Color property which doesn’t require a swatch.
+    0xff0085FF, // Base color
     <int, Color>{
-      50: Color(0xffce5641), //10%
-      100: Color(0xffb74c3a), //20%
-      200: Color(0xffa04332), //30%
-      300: Color(0xff89392b), //40%
-      400: Color(0xff733024), //50%
-      500: Color(0xff5c261d), //60%
-      600: Color(0xff451c16), //70%
-      700: Color(0xff2e130e), //80%
-      800: Color(0xff170907), //90%
-      900: Color(0xff000000), //100%
+      50: Color(0xffE3F2FD), // 10% - Light Blue
+      100: Color(0xffBBDEFB), // 20%
+      200: Color(0xff90CAF9), // 30%
+      300: Color(0xff64B5F6), // 40%
+      400: Color(0xff42A5F5), // 50%
+      500: Color(0xff2196F3), // 60% - Primary Blue
+      600: Color(0xff1E88E5), // 70%
+      700: Color(0xff1976D2), // 80%
+      800: Color(0xff1565C0), // 90%
+      900: Color(0xff0D47A1), // 100% - Darkest Shade
+    },
+  );
+}
+
+class PaletteWhite {
+  static const MaterialColor kToWhite = MaterialColor(
+    0xFFFFFFFF, // Base color (Pure White)
+    <int, Color>{
+      50: Color(0xFFFFFFFF), // 10% White
+      100: Color(0xFFFFFFFF), // 20%
+      200: Color(0xFFFFFFFF), // 30%
+      300: Color(0xFFFFFFFF), // 40%
+      400: Color(0xFFFFFFFF), // 50%
+      500: Color(0xFFFFFFFF), // 60% (Primary White)
+      600: Color(0xFFE0E0E0), // 70% Light Gray
+      700: Color(0xFFBDBDBD), // 80% Gray
+      800: Color(0xFF9E9E9E), // 90% Darker Gray
+      900: Color(0xFF757575), // 100% Dark Gray (for contrast)
     },
   );
 }
