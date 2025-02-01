@@ -16,6 +16,7 @@ class ForgetPassword extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(),
       resizeToAvoidBottomInset: false,
       body: SafeArea(
         child: Container(
@@ -26,7 +27,7 @@ class ForgetPassword extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              const SizedBox(height: 100),
+              const SizedBox(height: 60),
               const Align(
                 alignment: Alignment.topLeft,
                 child: Text(

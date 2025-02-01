@@ -32,7 +32,7 @@ class LoginPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              const SizedBox(height: 100),
+              const SizedBox(height: 60),
               const Align(
                 alignment: Alignment.topLeft,
                 child: Text(
