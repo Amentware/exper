@@ -1,7 +1,7 @@
-import 'package:Exper/controllers/auth_controller.dart';
-import 'package:Exper/firebase_options.dart';
-import 'package:Exper/screens/home_screen.dart';
-import 'package:Exper/screens/login_screen.dart';
+import 'package:exper/controllers/auth_controller.dart';
+import 'package:exper/firebase_options.dart';
+import 'package:exper/screens/home_screen.dart';
+import 'package:exper/screens/login_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,13 +11,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   Get.put(AuthController()); // Initialize Auth Controllers
-
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent, // Set status bar color to white
-      statusBarIconBrightness: Brightness.dark, // Set status bar icons to dark
-    ),
-  );
 
   runApp(const MyApp());
 }
@@ -29,7 +22,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Exper',
+      title: 'exper',
       theme: ThemeData(
         primarySwatch: Palette.kToDark,
         scaffoldBackgroundColor: Colors.white,
