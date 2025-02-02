@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Exper',
       theme: ThemeData(
-        primarySwatch: PaletteWhite.kToWhite,
+        primarySwatch: Palette.kToDark,
         scaffoldBackgroundColor: Colors.white,
       ),
       home: AuthWrapper(),
@@ -42,6 +42,7 @@ class MyApp extends StatelessWidget {
 }
 
 class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
   @override
   Widget build(BuildContext context) {
     final authController = Get.find<AuthController>();
@@ -53,7 +54,7 @@ class AuthWrapper extends StatelessWidget {
 
 class Palette {
   static const MaterialColor kToDark = MaterialColor(
-    0xff0085FF, // Base color
+    0xf6750a4, // Base colo
     <int, Color>{
       50: Color(0xffE3F2FD), // 10% - Light Blue
       100: Color(0xffBBDEFB), // 20%
@@ -65,24 +66,6 @@ class Palette {
       700: Color(0xff1976D2), // 80%
       800: Color(0xff1565C0), // 90%
       900: Color(0xff0D47A1), // 100% - Darkest Shade
-    },
-  );
-}
-
-class PaletteWhite {
-  static const MaterialColor kToWhite = MaterialColor(
-    0xFFFFFFFF, // Base color (Pure White)
-    <int, Color>{
-      50: Color(0xFFFFFFFF), // 10% White
-      100: Color(0xFFFFFFFF), // 20%
-      200: Color(0xFFFFFFFF), // 30%
-      300: Color(0xFFFFFFFF), // 40%
-      400: Color(0xFFFFFFFF), // 50%
-      500: Color(0xFFFFFFFF), // 60% (Primary White)
-      600: Color(0xFFE0E0E0), // 70% Light Gray
-      700: Color(0xFFBDBDBD), // 80% Gray
-      800: Color(0xFF9E9E9E), // 90% Darker Gray
-      900: Color(0xFF757575), // 100% Dark Gray (for contrast)
     },
   );
 }
