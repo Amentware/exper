@@ -13,14 +13,7 @@ void main() async {
   Get.put(AuthController()); // Initialize AuthController
 
   // Set status bar color to white and icons to black
-  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-    statusBarColor: Colors.white, // Background color of the status bar
-    statusBarIconBrightness: Brightness.dark, // Icons/text in black
-    systemNavigationBarColor:
-        Colors.white, // Optional: Makes bottom nav bar white
-    systemNavigationBarIconBrightness:
-        Brightness.dark, // Makes bottom icons black
-  ));
+
   runApp(const MyApp());
 }
 
@@ -29,6 +22,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: Colors.white, // Background color of the status bar
+      statusBarIconBrightness: Brightness.dark, // Icons/text in black
+      systemNavigationBarColor:
+          Colors.white, // Optional: Makes bottom nav bar white
+      systemNavigationBarIconBrightness:
+          Brightness.dark, // Makes bottom icons black
+    ));
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Exper',
