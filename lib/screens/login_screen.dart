@@ -10,8 +10,8 @@ class LoginPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final TextEditingController _emailController = TextEditingController();
-    final TextEditingController _passwordController = TextEditingController();
+    final TextEditingController emailController = TextEditingController();
+    final TextEditingController passwordController = TextEditingController();
     final AuthController authController = Get.find<AuthController>();
 
     void loginFunction() async {
@@ -19,7 +19,7 @@ class LoginPage extends StatelessWidget {
 
       // Show loading spinner while waiting for login response
       await authController.login(
-          _emailController.text, _passwordController.text);
+          emailController.text, passwordController.text);
     }
 
     return Scaffold(
@@ -48,7 +48,7 @@ class LoginPage extends StatelessWidget {
               ),
               const SizedBox(height: 25),
               TextField(
-                controller: _emailController,
+                controller: emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
                   hintText: 'Email',
@@ -64,7 +64,7 @@ class LoginPage extends StatelessWidget {
               ),
               const SizedBox(height: 15),
               TextField(
-                controller: _passwordController,
+                controller: passwordController,
                 obscureText: true,
                 decoration: InputDecoration(
                   hintText: 'Password',

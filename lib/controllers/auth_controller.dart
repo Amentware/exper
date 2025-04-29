@@ -52,7 +52,24 @@ class AuthController extends GetxController {
       Get.offAll(HomeScreen());
     } catch (e) {
       isLoading.value = false;
-      showErrorSnackbar("Sign Up Error", e.toString());
+      String errorMessage = 'An error occurred during sign up';
+      if (e is FirebaseAuthException) {
+        switch (e.code) {
+          case 'email-already-in-use':
+            errorMessage = 'The email is already in use.';
+            break;
+          case 'weak-password':
+            errorMessage = 'The password is too weak.';
+            break;
+        }
+      }
+      Get.snackbar(
+        "Sign Up Error",
+        errorMessage,
+ colorText: Colors.black,
+        backgroundColor: Colors.white,
+ );
+
     }
   }
 
@@ -65,7 +82,23 @@ class AuthController extends GetxController {
       Get.offAll(HomeScreen());
     } catch (e) {
       isLoading.value = false;
-      showErrorSnackbar("Login Error", e.toString());
+      String errorMessage = 'An error occurred during login';
+      if (e is FirebaseAuthException) {
+        switch (e.code) {
+          case 'user-not-found':
+            errorMessage = 'User not found.';
+            break;
+          case 'wrong-password':
+            errorMessage = 'Wrong password.';
+            break;
+        }
+      }
+      Get.snackbar(
+        "Login Error",
+        errorMessage,
+ colorText: Colors.black,
+        backgroundColor: Colors.white,
+ );
     }
   }
 
@@ -85,7 +118,7 @@ class AuthController extends GetxController {
         "Reset Mail Sent",
         "A password reset link has been sent to your email.",
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.green,
+        backgroundColor: Colors.black,
         colorText: Colors.white,
       );
     } catch (e) {
