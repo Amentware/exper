@@ -5,8 +5,7 @@ import '../widgets/colors.dart';
 
 class ForgetPassword extends StatelessWidget {
   final TextEditingController _emailController = TextEditingController();
-  final AuthController authController =
-      Get.find<AuthController>();
+  final AuthController authController = Get.find<AuthController>();
 
   ForgetPassword({super.key}); // Get instance of AuthController
 
@@ -99,7 +98,7 @@ class ForgetPassword extends StatelessWidget {
                       color: black,
                       borderRadius: BorderRadius.circular(50),
                       child: InkWell(
-                        splashColor: const Color.fromARGB(255, 251, 138, 38),
+                        splashColor: Colors.black,
                         borderRadius: BorderRadius.circular(50),
                         onTap: forgetPasswordFunction,
                         child: Container(
