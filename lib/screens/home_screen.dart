@@ -21,6 +21,8 @@ class HomeScreen extends StatelessWidget {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
+          
+          backgroundColor: Colors.white,
           title: Obx(() => Text("Hello, ${authController.userName.value}")),
           actions: [
             IconButton(
@@ -32,17 +34,31 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
         drawer: Drawer(
-          child: SafeArea(
-            child: SingleChildScrollView(child: _buildSidebar(context)),
-          ),
+  backgroundColor: Colors.white,
+  child: Container(
+    decoration: BoxDecoration(
+      border: Border(
+        right: BorderSide(
+          color: Colors.grey.shade300, // Or any color you prefer
+          width: 1.0,
         ),
+      ),
+    ),
+    child: _buildSidebar(context),
+  ),
+),
+
         body: Obx(
           () => IndexedStack(
-              index: homeController.selectedIndex.value,
-              children: [
-                Center(child: Text("Add Category Transactions Here")),
-                Center(child: Text("Add Category2 Transactions Here")),
-              ]),
+            index: homeController.selectedIndex.value,
+            children: const [
+              Center(child: Text("Dashboard")),
+              Center(child: Text("Transaction")),
+              Center(child: Text("Budgets Screen")),
+              Center(child: Text("Reports Screen")),
+              Center(child: Text("Settings Screen")),
+            ],
+          ),
         ),
       ),
     );
@@ -50,35 +66,53 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildSidebar(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Padding(
-          padding: const EdgeInsets.all(10),
-          child: Text(
-            "Menu",
-            style: Theme.of(context).textTheme.titleLarge,
+        Column(
+  
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              height: 20,
+            ),
+            Row(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 10.0, right: 5.0),
+                  child: Image.asset(
+                    'assets/images/icons/logo.png',
+                    width: 30,
+                    height: 30,
+                  ),
+                ),
+                const Text(
+                  "Exper",
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
+            ),
+            _buildDrawerItem(context, "Dashboard", Icons.dashboard, 0),
+            _buildDrawerItem(context, "Transactions", Icons.swap_horiz, 1),
+            _buildDrawerItem(context, "Budgets", Icons.wallet, 2),
+            _buildDrawerItem(context, "Reports", Icons.insert_chart, 3),
+            _buildDrawerItem(context, "Settings", Icons.settings, 4),
+          ],
+        ),
+        ListTile(
+          leading: const CircleAvatar(),
+          title: Obx(() => Text(authController.userName.value)),
+          trailing: IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () => authController.logout(),
           ),
         ),
-        _buildDrawerItem(
-          context,
-          "Dashboard",
-          Icons.dashboard,
-          0,
-        ),
-        _buildDrawerItem(
-          context,
-          "Add Category",
-          Icons.category,
-          1,
-        ),
-        const Divider(indent: 20, thickness: 1, endIndent: 20, height: 60),
-        Padding(
-          padding: const EdgeInsets.all(10),
-          child: Text(
-            "2021 Teamwork License",
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-        ),
+        SizedBox(
+              height: 20,
+            ),
       ],
     );
   }
@@ -87,29 +121,37 @@ class HomeScreen extends StatelessWidget {
       BuildContext context, String title, IconData icon, int index) {
     return Obx(
       () => InkWell(
+      
         onTap: () {
           homeController.changeTab(index);
           Navigator.pop(context);
         },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-          decoration: BoxDecoration(
-            color: homeController.selectedIndex.value == index
-                ? Colors.blue.shade100
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-          ),
+          margin: const EdgeInsets.symmetric(vertical: 5),
+          decoration: homeController.selectedIndex.value == index
+              ? BoxDecoration(
+                  color: Colors.black,
+                )
+              : null,
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(icon, color: Colors.blue),
+              Icon(
+                icon,
+                color: homeController.selectedIndex.value == index
+                    ? Colors.white
+                    : Colors.black,
+              ),
               const SizedBox(width: 15),
               Text(
                 title,
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                   color: homeController.selectedIndex.value == index
-                      ? Colors.blue
+                      ? Colors.white
                       : Colors.black,
                 ),
               ),
