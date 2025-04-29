@@ -55,7 +55,7 @@ class LoginPage extends StatelessWidget {
                   fillColor: const Color(0xFFF8F8F8),
                   filled: true,
                   prefixIcon:
-                      const Icon(Icons.email_outlined, color: blueColor),
+                      const Icon(Icons.email_outlined, color: black),
                   border: OutlineInputBorder(
                     borderSide: BorderSide.none,
                     borderRadius: BorderRadius.circular(50),
@@ -71,7 +71,7 @@ class LoginPage extends StatelessWidget {
                   fillColor: const Color(0xFFF8F8F8),
                   filled: true,
                   prefixIcon:
-                      const Icon(Icons.lock_outline_rounded, color: blueColor),
+                      const Icon(Icons.lock_outline_rounded, color: black),
                   border: OutlineInputBorder(
                     borderSide: BorderSide.none,
                     borderRadius: BorderRadius.circular(50),
@@ -96,7 +96,7 @@ class LoginPage extends StatelessWidget {
                         child: const Text(
                           'Sign Up',
                           style: TextStyle(
-                              color: blueColor, fontWeight: FontWeight.w900),
+                              color: black, fontWeight: FontWeight.w900),
                         ),
                       ),
                     ),
@@ -111,7 +111,7 @@ class LoginPage extends StatelessWidget {
                         padding: const EdgeInsets.all(15),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(50),
-                          color: blueColor,
+                          color: black,
                         ),
                         child: Obx(
                           () => authController.isLoading.value
@@ -157,7 +157,7 @@ class LoginPage extends StatelessWidget {
                       child: Text(
                         'Forgot Password?',
                         style: TextStyle(
-                          color: Colors.blue, // Set the text color
+                          color: Colors.black, // Set the text color
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
                         ),
@@ -176,7 +176,7 @@ class LoginPage extends StatelessWidget {
                   child: Text(
                     'Forgot Password?',
                     style: TextStyle(
-                        color: blueColor,
+                        color: black,
                         fontSize: 15,
                         fontWeight: FontWeight.w500),
                   ),

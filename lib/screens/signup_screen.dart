@@ -9,17 +9,17 @@ class SignUpPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final TextEditingController _emailController = TextEditingController();
-    final TextEditingController _passwordController = TextEditingController();
-    final TextEditingController _usernameController = TextEditingController();
+    final TextEditingController emailController = TextEditingController();
+    final TextEditingController passwordController = TextEditingController();
+    final TextEditingController usernameController = TextEditingController();
     final AuthController authController = Get.find<AuthController>();
 
     void signUpFunction() async {
       FocusManager.instance.primaryFocus?.unfocus();
       await authController.signUp(
-        _usernameController.text,
-        _emailController.text,
-        _passwordController.text,
+        usernameController.text,
+        emailController.text,
+        passwordController.text,
       );
     }
 
@@ -48,13 +48,13 @@ class SignUpPage extends StatelessWidget {
               ),
               const SizedBox(height: 25),
               _buildTextField(
-                  _usernameController, 'Name', Icons.account_circle_outlined),
+                  usernameController, 'Name', Icons.account_circle_outlined),
               const SizedBox(height: 15),
-              _buildTextField(_emailController, 'Email', Icons.email_outlined,
+              _buildTextField(emailController, 'Email', Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress),
               const SizedBox(height: 15),
               _buildTextField(
-                  _passwordController, 'Password', Icons.lock_outline_rounded,
+                  passwordController, 'Password', Icons.lock_outline_rounded,
                   obscureText: true),
               const SizedBox(height: 18),
               Row(
@@ -62,7 +62,7 @@ class SignUpPage extends StatelessWidget {
                   Expanded(
                     child: _buildButton(
                         "Login",
-                        orangeColor,
+                    black    ,
                         () => Get.offAll(const LoginPage(),
                             transition: Transition.leftToRight),
                         isOutlined: true),
@@ -72,7 +72,7 @@ class SignUpPage extends StatelessWidget {
                     child: Obx(() {
                       // Reactively check if loading is true
                       return _buildButton(
-                          "Sign Up", orangeColor, signUpFunction,
+                          "Sign Up", black, signUpFunction,
                           isLoading: authController.isLoading.value);
                     }),
                   ),
@@ -97,7 +97,7 @@ class SignUpPage extends StatelessWidget {
         hintText: hintText,
         fillColor: const Color.fromARGB(255, 248, 248, 248),
         filled: true,
-        prefixIcon: Icon(icon, color: orangeColor),
+        prefixIcon: Icon(icon, color: black),
         border: OutlineInputBorder(
           borderSide: BorderSide.none,
           borderRadius: BorderRadius.circular(50),
@@ -130,7 +130,7 @@ class SignUpPage extends StatelessWidget {
               : Text(
                   text,
                   style: TextStyle(
-                      color: isOutlined ? orangeColor : Colors.white,
+                      color: isOutlined ? black : Colors.white,
                       fontWeight: FontWeight.w900),
                 ),
         ),

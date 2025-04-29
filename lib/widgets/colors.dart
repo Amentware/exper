@@ -14,3 +14,4 @@ const blackgrey = Color(0xff666666);
 const lightgreen = Color(0xff42B2A2);
 const lightblue = Color(0xff3E7291);
 const purple = Color(0xff81178C);
+const black = Color.fromARGB(255, 0, 0, 0);

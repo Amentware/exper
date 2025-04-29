@@ -14,12 +14,22 @@ class HomeScreen extends StatelessWidget {
   final AuthController authController = Get.find<AuthController>();
   final HomeController homeController = Get.put(HomeController());
 
+  HomeScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
           title: Obx(() => Text("Hello, ${authController.userName.value}")),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () {
+                authController.logout();
+              },
+            ),
+          ],
         ),
         drawer: Drawer(
           child: SafeArea(

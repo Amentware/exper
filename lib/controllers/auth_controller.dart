@@ -6,7 +6,7 @@ import '../screens/home_screen.dart';
 import '../screens/login_screen.dart';
 
 class AuthController extends GetxController {
-  FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   Rx<User?> user = Rx<User?>(FirebaseAuth.instance.currentUser);
   RxBool isLoading = false.obs;
   RxString userName = ''.obs; // Reactive username
