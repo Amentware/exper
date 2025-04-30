@@ -37,10 +37,24 @@ class TransactionController extends GetxController {
     // Wait for profile controller to initialize
     ever(_profileController.profile, (_) => _fetchUserDateRange());
 
-    // Initial fetch if profile is already loaded
-    if (_profileController.profile.value != null) {
-      _fetchUserDateRange();
-    }
+    // Wait for the CategoryController to fully load categories
+    ever(_categoryController.categories, (_) {
+      if (_profileController.profile.value != null) {
+        applyFilters();
+        calculateStatistics();
+      }
+    });
+
+    // Ensure categories are loaded before transaction calculations
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Force refresh categories to ensure income categories are properly marked
+      _categoryController.fetchCategories().then((_) {
+        // After categories are loaded, fetch transactions
+        if (_profileController.profile.value != null) {
+          _fetchUserDateRange();
+        }
+      });
+    });
   }
 
   void _fetchUserDateRange() async {
@@ -75,10 +89,13 @@ class TransactionController extends GetxController {
 
   Future<void> fetchTransactions() async {
     isLoading.value = true;
+    update(); // Update to show loading indicator
+
     try {
       final userId = _authController.user.value?.uid;
       if (userId == null) {
         isLoading.value = false;
+        update();
         return;
       }
 
@@ -93,6 +110,7 @@ class TransactionController extends GetxController {
         transactions.clear();
         filteredTransactions.clear();
         isLoading.value = false;
+        update();
         return;
       }
 
@@ -130,9 +148,12 @@ class TransactionController extends GetxController {
           transactionDocs.sort((a, b) {
             final aData = a.data() as Map<String, dynamic>;
             final bData = b.data() as Map<String, dynamic>;
-            final aDate = (aData['date'] as Timestamp).toDate();
-            final bDate = (bData['date'] as Timestamp).toDate();
-            return bDate.compareTo(aDate); // descending order - newest first
+            final aTimestamp = aData['date'] as Timestamp;
+            final bTimestamp = bData['date'] as Timestamp;
+
+            // Compare using milliseconds since epoch to include both date and time
+            return bTimestamp.millisecondsSinceEpoch
+                .compareTo(aTimestamp.millisecondsSinceEpoch);
           });
         } else {
           // For other errors, rethrow
@@ -163,59 +184,80 @@ class TransactionController extends GetxController {
     } catch (e) {
       // Keep this for error handling
       print('ERROR FETCHING TRANSACTIONS: $e');
+      update();
     } finally {
       isLoading.value = false;
+      update(); // Update UI after loading is complete
     }
   }
 
   void applyFilters() {
-    filteredTransactions.clear();
+    try {
+      filteredTransactions.clear();
 
-    var filtered = transactions.where((transaction) {
-      // Apply category filter
-      if (selectedCategory.value != 'All Categories' &&
-          transaction.category != selectedCategory.value) {
-        return false;
-      }
+      var filtered = transactions.where((transaction) {
+        // Apply category filter
+        if (selectedCategory.value != 'All Categories' &&
+            transaction.category != selectedCategory.value) {
+          return false;
+        }
 
-      // Apply type filter based on category type
-      if (selectedType.value != 'All Types') {
-        // Find the category of this transaction
-        final categoryMatches = _categoryController.categories
-            .where((category) => category.name == transaction.category);
+        // Apply type filter based on category type
+        if (selectedType.value != 'All Types') {
+          bool isIncome = _isIncomeCategory(transaction.category);
 
-        if (categoryMatches.isNotEmpty) {
-          final transactionCategory = categoryMatches.first;
-          // Filter by type
-          if (selectedType.value == 'Income' &&
-              transactionCategory.type != 'income') {
+          if (selectedType.value == 'Income' && !isIncome) {
             return false;
-          } else if (selectedType.value == 'Expense' &&
-              transactionCategory.type != 'expense') {
-            return false;
-          }
-        } else {
-          // Default behavior: assume it's an expense if we can't determine type
-          if (selectedType.value == 'Income') {
+          } else if (selectedType.value == 'Expense' && isIncome) {
             return false;
           }
         }
-      }
 
-      // Apply search filter
-      if (searchController.text.isNotEmpty) {
-        final searchTerm = searchController.text.toLowerCase();
-        return transaction.description.toLowerCase().contains(searchTerm) ||
-            transaction.category.toLowerCase().contains(searchTerm);
-      }
+        // Apply search filter
+        if (searchController.text.isNotEmpty) {
+          final searchTerm = searchController.text.toLowerCase();
+          // Safely handle null or empty fields with null-aware operators
+          final description = transaction.description?.toLowerCase() ?? '';
+          final category = transaction.category?.toLowerCase() ?? '';
 
-      return true;
-    }).toList();
+          // Check if search term appears in description or category
+          return description.contains(searchTerm) ||
+              category.contains(searchTerm);
+        }
 
-    // Ensure transactions remain sorted by date (newest first)
-    filtered.sort((a, b) => b.date.compareTo(a.date));
+        return true;
+      }).toList();
 
-    filteredTransactions.addAll(filtered);
+      // Ensure transactions remain sorted by date (newest first)
+      filtered.sort((a, b) {
+        // First compare by date
+        final dateComparison = b.date.compareTo(a.date);
+
+        // If dates are the same (same day), compare by created_at timestamp if available
+        if (dateComparison == 0) {
+          // Compare created_at timestamps if they exist
+          if (a.createdAt != null && b.createdAt != null) {
+            return b.createdAt!.compareTo(a.createdAt!);
+          }
+          // If one has createdAt and the other doesn't, prioritize the one with createdAt
+          if (a.createdAt != null) return -1;
+          if (b.createdAt != null) return 1;
+        }
+
+        return dateComparison;
+      });
+
+      filteredTransactions.addAll(filtered);
+
+      // Notify GetBuilder widgets to update
+      update();
+    } catch (e) {
+      print('Error applying filters: $e');
+      // Reset to all transactions in case of error
+      filteredTransactions.clear();
+      filteredTransactions.addAll(transactions);
+      update();
+    }
   }
 
   void setCategory(String category) {
@@ -229,22 +271,71 @@ class TransactionController extends GetxController {
   }
 
   Future<void> setDateRange(DateTime start, DateTime end) async {
-    startDate.value = start;
-    endDate.value = end;
-    _initDateRange();
-
-    // Save user preference for date range using ProfileController
     try {
-      await _profileController.setDateRange(start, end);
-    } catch (e) {
-      print('Error saving date range preference: $e');
-    }
+      print(
+          'TransactionController: Setting date range from ${start.toString()} to ${end.toString()}');
 
-    await fetchTransactions();
+      // Update local state first
+      startDate.value = start;
+      endDate.value = end;
+      _initDateRange();
+
+      // Save user preference for date range using ProfileController
+      try {
+        await _profileController.setDateRange(start, end);
+      } catch (e) {
+        print('Error saving date range preference to profile: $e');
+        // Continue even if profile save fails
+      }
+
+      // Fetch transactions with the new date range
+      await fetchTransactions();
+    } catch (e) {
+      print('Error in setDateRange: $e');
+      // Fallback to a safe date range if there's an error
+      startDate.value = DateTime.now().subtract(const Duration(days: 30));
+      endDate.value = DateTime.now();
+      _initDateRange();
+
+      // Try to fetch transactions with fallback dates
+      try {
+        await fetchTransactions();
+      } catch (innerError) {
+        print('Failed to fetch transactions with fallback dates: $innerError');
+      }
+    }
+  }
+
+  // New method to filter transactions locally by date range without updating Firebase
+  Future<void> filterByDateRangeLocally(DateTime start, DateTime end) async {
+    try {
+      print(
+          'TransactionController: Filtering locally by date range from ${start.toString()} to ${end.toString()}');
+
+      // Update local state
+      startDate.value = start;
+      endDate.value = end;
+      _initDateRange();
+
+      // Apply filters but don't save to Firebase or fetch new data
+      applyFilters();
+    } catch (e) {
+      print('Error in filterByDateRangeLocally: $e');
+    }
   }
 
   void searchTransactions(String query) {
-    applyFilters();
+    try {
+      // Apply all filters with the updated search term
+      applyFilters();
+    } catch (e) {
+      print('Error during search: $e');
+      // Recover from error by resetting search
+      if (searchController.text.isNotEmpty) {
+        searchController.clear();
+        applyFilters();
+      }
+    }
   }
 
   Future<void> addTransaction(models.Transaction transaction) async {
@@ -284,25 +375,40 @@ class TransactionController extends GetxController {
     }
   }
 
+  // Helper method to determine if a category is an income category
+  bool _isIncomeCategory(String categoryName) {
+    // First check the category controller
+    final categoryMatches = _categoryController.categories.where((category) =>
+        category.name.trim().toLowerCase() ==
+        categoryName.trim().toLowerCase());
+
+    if (categoryMatches.isNotEmpty) {
+      return categoryMatches.first.type == 'income';
+    }
+
+    // Fallback heuristic for salary and income categories
+    final lowerName = categoryName.trim().toLowerCase();
+    final incomeKeywords = [
+      'income',
+      'salary',
+      'revenue',
+      'wage',
+      'earnings',
+      'stipend',
+      'bonus'
+    ];
+    return incomeKeywords.any((keyword) => lowerName.contains(keyword));
+  }
+
   // Calculate income, expense, and balance
   void calculateStatistics() {
     double income = 0.0;
     double expense = 0.0;
 
     for (var transaction in transactions) {
-      // Find category to determine transaction type
-      final categoryMatches = _categoryController.categories
-          .where((category) => category.name == transaction.category);
-
-      if (categoryMatches.isNotEmpty) {
-        final category = categoryMatches.first;
-        if (category.type == 'income') {
-          income += transaction.amount;
-        } else {
-          expense += transaction.amount;
-        }
+      if (_isIncomeCategory(transaction.category)) {
+        income += transaction.amount;
       } else {
-        // Default behavior: assume it's an expense if we can't determine type
         expense += transaction.amount;
       }
     }

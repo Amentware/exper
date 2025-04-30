@@ -5,6 +5,7 @@ import 'package:exper/controllers/transaction_controller.dart';
 import 'package:exper/firebase_options.dart';
 import 'package:exper/screens/home_screen.dart';
 import 'package:exper/screens/login_screen.dart';
+import 'package:exper/widgets/app_scroll_behavior.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,11 +15,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Initialize controllers
-  Get.put(AuthController());
-  Get.put(ProfileController());
-  Get.put(CategoryController());
-  Get.put(TransactionController());
+  // Initialize controllers with permanent instances
+  Get.put(AuthController(), permanent: true);
+  Get.put(ProfileController(), permanent: true);
+  Get.put(CategoryController(), permanent: true);
+  Get.put(TransactionController(), permanent: true);
 
   // Set status bar color to white and icons to black
 
@@ -41,12 +42,24 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Exper',
+      scrollBehavior: AppScrollBehavior(), // Apply custom scroll behavior
       theme: ThemeData(
         primaryColor: Colors.black,
         scaffoldBackgroundColor: Colors.white,
+        // Force app bar to stay white during scrolling
+        colorScheme: ColorScheme.light(
+          background: Colors.white,
+          surface: Colors.white,
+          onSurface: Colors.black,
+          primary: Colors.black,
+          onPrimary: Colors.white,
+        ),
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.white,
           elevation: 0,
+          scrolledUnderElevation: 0, // Prevents elevation when scrolling
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.white, // Prevents color shift during scroll
           iconTheme: IconThemeData(color: Colors.black),
           titleTextStyle: TextStyle(
             color: Colors.black,

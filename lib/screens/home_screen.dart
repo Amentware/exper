@@ -30,6 +30,11 @@ class HomeScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.white,
+          elevation: 0,
+          scrolledUnderElevation: 0, // Prevents elevation change when scrolling
+          // Force white color even during scroll
+          surfaceTintColor: Colors.white,
+          shadowColor: Colors.transparent,
           actions: [
             Container(
               margin: const EdgeInsets.only(right: 16),
@@ -59,7 +64,7 @@ class HomeScreen extends StatelessWidget {
         ),
         floatingActionButton: Obx(() => homeController.selectedIndex.value == 0
                 ? Container(
-                    margin: EdgeInsets.only(bottom: 40.0, right: 5),
+                    margin: EdgeInsets.only(bottom: 30.0, right: 5),
                     child: FloatingActionButton(
                       onPressed: () {
                         Get.to(() => AddTransactionScreen(),

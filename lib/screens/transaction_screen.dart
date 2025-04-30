@@ -10,13 +10,32 @@ import '../controllers/category_controller.dart';
 import '../models/transaction.dart' as models;
 import 'add_transaction_screen.dart';
 
-class TransactionScreen extends StatelessWidget {
-  final transactionController = Get.put(TransactionController());
-  final categoryController = Get.put(CategoryController());
-  final authController = Get.find<AuthController>();
-  final profileController = Get.find<ProfileController>();
+class TransactionScreen extends StatefulWidget {
+  const TransactionScreen({Key? key}) : super(key: key);
 
-  TransactionScreen({Key? key}) : super(key: key);
+  @override
+  State<TransactionScreen> createState() => _TransactionScreenState();
+}
+
+class _TransactionScreenState extends State<TransactionScreen> {
+  late TransactionController transactionController;
+  late CategoryController categoryController;
+  late AuthController authController;
+  late ProfileController profileController;
+
+  @override
+  void initState() {
+    super.initState();
+    transactionController = Get.find<TransactionController>();
+    categoryController = Get.find<CategoryController>();
+    authController = Get.find<AuthController>();
+    profileController = Get.find<ProfileController>();
+
+    // Force refresh when entering this screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      transactionController.fetchTransactions();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,25 +51,25 @@ class TransactionScreen extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           _buildAddTransactionButton(),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           _buildSearchBar(),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
-                child: _buildFilterDropdown('All Types'),
+                child: _buildTypeDropdown(),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _buildFilterDropdown('All Categories'),
+                child: _buildCategoryDropdown(),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           _buildDateRangePicker(),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           _buildTransactionTable(),
         ],
       ),
@@ -60,24 +79,25 @@ class TransactionScreen extends StatelessWidget {
   Widget _buildAddTransactionButton() {
     return InkWell(
       onTap: () {
-        Get.to(() => AddTransactionScreen(), transition: Transition.rightToLeft)
+        Get.to(() => const AddTransactionScreen(),
+                transition: Transition.rightToLeft)
             ?.then((result) {
           if (result == true) {
-            // Refresh data after adding a transaction
             transactionController.fetchTransactions();
           }
         });
       },
       child: Container(
+        height: 40,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: black,
-          borderRadius: BorderRadius.circular(5),
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: const [
-            Icon(Icons.add, color: Colors.white),
+            Icon(Icons.add, color: Colors.white, size: 20),
             SizedBox(width: 8),
             Text(
               'Add Transaction',
@@ -95,220 +115,173 @@ class TransactionScreen extends StatelessWidget {
 
   Widget _buildSearchBar() {
     return Container(
+      height: 40, // Set fixed height to match other elements
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F8),
-        borderRadius: BorderRadius.circular(5),
-        border: Border.all(color: Colors.grey[300]!),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade200),
       ),
-      child: TextField(
-        controller: transactionController.searchController,
-        decoration: InputDecoration(
-          hintText: 'Search transactions...',
-          prefixIcon: Icon(Icons.search, color: black),
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(vertical: 12),
-        ),
-        onChanged: (value) {
-          transactionController.searchTransactions(value);
-        },
+      child: Row(
+        children: [
+          // Search icon
+          Padding(
+            padding: const EdgeInsets.only(left: 12.0, right: 8.0),
+            child: Icon(Icons.search, color: black, size: 20),
+          ),
+          // Text field
+          Expanded(
+            child: TextField(
+              controller: transactionController.searchController,
+              decoration: const InputDecoration(
+                hintText: 'Search transactions...',
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(vertical: 10),
+              ),
+              style: const TextStyle(
+                fontSize: 16,
+              ),
+              onChanged: (value) {
+                try {
+                  transactionController.searchTransactions(value);
+                  setState(
+                      () {}); // Force rebuild to update clear button visibility
+                } catch (e) {
+                  print('Error during search input: $e');
+                }
+              },
+            ),
+          ),
+          // Clear button (if text exists)
+          if (transactionController.searchController.text.isNotEmpty)
+            IconButton(
+              icon: Icon(Icons.clear, color: Colors.grey[600], size: 20),
+              padding: const EdgeInsets.only(right: 8.0),
+              constraints: const BoxConstraints(),
+              onPressed: () {
+                transactionController.searchController.clear();
+                transactionController.searchTransactions('');
+                setState(() {}); // Force rebuild
+              },
+            ),
+          const SizedBox(width: 8),
+        ],
       ),
     );
   }
 
-  Widget _buildFilterDropdown(String title) {
-    if (title == 'All Types') {
-      return Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(5),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(5),
-          splashColor: Colors.grey.withOpacity(0.1),
-          highlightColor: Colors.grey.withOpacity(0.1),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F8F8),
-              borderRadius: BorderRadius.circular(5),
-              border: Border.all(color: Colors.grey[300]!),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: transactionController.selectedType.value,
-                      icon: Padding(
-                        padding: const EdgeInsets.only(left: 8.0),
-                        child: Icon(Icons.arrow_drop_down, color: black),
-                      ),
-                      isExpanded: true,
-                      isDense: true,
-                      alignment: Alignment.centerLeft,
-                      dropdownColor: Colors.white,
-                      borderRadius: BorderRadius.circular(5),
-                      style: TextStyle(
-                        fontSize: 16,
+  Widget _buildTypeDropdown() {
+    // Simple dropdown without GetX reactivity
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: transactionController.selectedType.value,
+          icon: Padding(
+            padding: const EdgeInsets.only(left: 8.0),
+            child: Icon(Icons.arrow_drop_down, color: black),
+          ),
+          isExpanded: true,
+          isDense: true,
+          alignment: Alignment.centerLeft,
+          onChanged: (String? newValue) {
+            if (newValue != null) {
+              transactionController.setType(newValue);
+              setState(() {}); // Force rebuild
+            }
+          },
+          items: transactionController.types
+              .map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Row(
+                children: [
+                  Icon(Icons.filter_list_outlined, size: 18, color: black),
+                  const SizedBox(width: 12),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryDropdown() {
+    // Simple dropdown without GetX reactivity
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: transactionController.selectedCategory.value,
+          icon: Padding(
+            padding: const EdgeInsets.only(left: 8.0),
+            child: Icon(Icons.arrow_drop_down, color: black),
+          ),
+          isExpanded: true,
+          isDense: true,
+          alignment: Alignment.centerLeft,
+          onChanged: (String? newValue) {
+            if (newValue != null) {
+              transactionController.setCategory(newValue);
+              setState(() {}); // Force rebuild
+            }
+          },
+          items: categoryController.categoryNames
+              .map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Row(
+                children: [
+                  Icon(Icons.category_outlined, size: 18, color: black),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      value,
+                      style: const TextStyle(
                         color: Colors.black,
+                        fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
-                      selectedItemBuilder: (BuildContext context) {
-                        return transactionController.types
-                            .map<Widget>((String item) {
-                          return Container(
-                            alignment: Alignment.centerLeft,
-                            child: Row(
-                              children: [
-                                Icon(Icons.filter_list_outlined,
-                                    size: 18, color: black),
-                                SizedBox(width: 12),
-                                Text(
-                                  item,
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList();
-                      },
-                      onChanged: (String? newValue) {
-                        if (newValue != null) {
-                          transactionController.setType(newValue);
-                        }
-                      },
-                      items: transactionController.types
-                          .map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: Text(
-                              value,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.black,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
+                ],
+              ),
+            );
+          }).toList(),
         ),
-      );
-    } else {
-      return Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(5),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(5),
-          splashColor: Colors.grey.withOpacity(0.1),
-          highlightColor: Colors.grey.withOpacity(0.1),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F8F8),
-              borderRadius: BorderRadius.circular(5),
-              border: Border.all(color: Colors.grey[300]!),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Obx(
-                    () => DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: transactionController.selectedCategory.value,
-                        icon: Padding(
-                          padding: const EdgeInsets.only(left: 8.0),
-                          child: Icon(Icons.arrow_drop_down, color: black),
-                        ),
-                        isExpanded: true,
-                        isDense: true,
-                        alignment: Alignment.centerLeft,
-                        dropdownColor: Colors.white,
-                        borderRadius: BorderRadius.circular(5),
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.black,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        selectedItemBuilder: (BuildContext context) {
-                          return categoryController.categoryNames
-                              .map<Widget>((String item) {
-                            return Container(
-                              alignment: Alignment.centerLeft,
-                              child: Row(
-                                children: [
-                                  Icon(Icons.category_outlined,
-                                      size: 18, color: black),
-                                  SizedBox(width: 12),
-                                  Text(
-                                    item,
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }).toList();
-                        },
-                        onChanged: (String? newValue) {
-                          if (newValue != null) {
-                            transactionController.setCategory(newValue);
-                          }
-                        },
-                        items: categoryController.categoryNames
-                            .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 8.0),
-                              child: Text(
-                                value,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
+      ),
+    );
   }
 
   Widget _buildDateRangePicker() {
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(5),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(5),
-        splashColor: Colors.grey.withOpacity(0.1),
-        highlightColor: Colors.grey.withOpacity(0.1),
-        onTap: () async {
+    return InkWell(
+      onTap: () async {
+        try {
           final DateTimeRange? picked = await showDateRangePicker(
-            context: Get.context!,
+            context: context,
             initialDateRange: DateTimeRange(
               start: transactionController.startDate.value,
               end: transactionController.endDate.value,
@@ -318,19 +291,29 @@ class TransactionScreen extends StatelessWidget {
             builder: (context, child) {
               return Theme(
                 data: ThemeData.light().copyWith(
-                  colorScheme: ColorScheme.light(
-                    primary: black,
+                  colorScheme: const ColorScheme.light(
+                    primary: Colors.black,
                     onPrimary: Colors.white,
                     surface: Colors.white,
-                    onSurface: black,
+                    onSurface: Colors.black,
+                    secondaryContainer:
+                        Color(0xFFE0E0E0), // For range selection
+                    onSecondaryContainer:
+                        Colors.black87, // Text on range selection
                   ),
                   dialogBackgroundColor: Colors.white,
                   textButtonTheme: TextButtonThemeData(
                     style: TextButton.styleFrom(
-                      foregroundColor: black,
-                      textStyle: TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      foregroundColor: Colors.black, // Button text color
+                    ),
+                  ),
+                  appBarTheme: const AppBarTheme(
+                    backgroundColor: Colors.white,
+                    iconTheme: IconThemeData(color: Colors.black),
+                    titleTextStyle: TextStyle(
+                      color: Colors.black,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
@@ -340,33 +323,59 @@ class TransactionScreen extends StatelessWidget {
           );
 
           if (picked != null) {
-            transactionController.setDateRange(picked.start, picked.end);
+            print('Date range selected: ${picked.start} to ${picked.end}');
+            // Use local filtering instead of updating Firebase
+            await transactionController.filterByDateRangeLocally(
+                picked.start, picked.end);
+            setState(() {}); // Force rebuild
           }
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF8F8F8),
-            borderRadius: BorderRadius.circular(5),
-            border: Border.all(color: Colors.grey[300]!),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.calendar_today, size: 18, color: black),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Obx(() => Text(
-                      transactionController.selectedDateRange.value,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.black,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    )),
+        } catch (e) {
+          print('Error in date range picker: $e');
+          // Show error dialog
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Error'),
+                content: const Text(
+                    'There was a problem with the date picker. Please try again.'),
+                actions: [
+                  TextButton(
+                    child: const Text('OK'),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+        }
+      },
+      child: Container(
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.calendar_today, size: 18, color: black),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                transactionController.selectedDateRange.value,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.black,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-              Icon(Icons.arrow_drop_down, color: black),
-            ],
-          ),
+            ),
+            Icon(Icons.arrow_drop_down, color: black),
+          ],
         ),
       ),
     );
@@ -374,321 +383,638 @@ class TransactionScreen extends StatelessWidget {
 
   Widget _buildTransactionTable() {
     return Expanded(
-      child: Obx(() {
-        if (transactionController.isLoading.value) {
-          return Center(
-            child: CircularProgressIndicator(
-              color: black,
-            ),
-          );
-        }
+      child: Builder(
+        builder: (context) {
+          // Use local variables instead of reactive .value properties
+          final isLoading = transactionController.isLoading.value;
+          final filteredTransactions =
+              transactionController.filteredTransactions;
+          final searchText = transactionController.searchController.text;
 
-        if (transactionController.filteredTransactions.isEmpty) {
-          print('TRANSACTION SCREEN: No transactions to display');
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.receipt_long_outlined,
-                  size: 48,
-                  color: Colors.grey[400],
-                ),
-                const SizedBox(height: 16),
-                Text(
+          if (isLoading) {
+            return Center(
+              child: CircularProgressIndicator(
+                color: black,
+              ),
+            );
+          }
+
+          if (filteredTransactions.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.receipt_long_outlined,
+                    size: 48,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    searchText.isNotEmpty
+                        ? 'No transactions match your search'
+                        : 'No transactions found',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    searchText.isNotEmpty
+                        ? 'Try different search terms or clear search'
+                        : 'Add your first transaction or change filters',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                  if (searchText.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16.0),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          transactionController.searchController.clear();
+                          transactionController.searchTransactions('');
+                          setState(() {}); // Force rebuild
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                        ),
+                        child: const Text(
+                          'Clear Search',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          }
+
+          try {
+            // Group transactions by date
+            final Map<String, List<models.Transaction>> groupedTransactions =
+                {};
+            final Map<String, double> dailyTotals = {};
+
+            // Format date for grouping
+            String getDateKey(DateTime date) {
+              return DateFormat('yyyy-MM-dd').format(date);
+            }
+
+            // Group transactions by date and calculate daily totals
+            for (var transaction in filteredTransactions) {
+              try {
+                final dateKey = getDateKey(transaction.date);
+
+                if (!groupedTransactions.containsKey(dateKey)) {
+                  groupedTransactions[dateKey] = [];
+                  dailyTotals[dateKey] = 0;
+                }
+
+                groupedTransactions[dateKey]!.add(transaction);
+
+                // Calculate daily total (negative for expense, positive for income)
+                final categoryMatches = categoryController.categories.where(
+                    (category) =>
+                        category.name.trim().toLowerCase() ==
+                        transaction.category.trim().toLowerCase());
+
+                if (categoryMatches.isNotEmpty) {
+                  final category = categoryMatches.first;
+                  if (category.type == 'expense') {
+                    dailyTotals[dateKey] =
+                        dailyTotals[dateKey]! - transaction.amount;
+                  } else {
+                    dailyTotals[dateKey] =
+                        dailyTotals[dateKey]! + transaction.amount;
+                  }
+                } else {
+                  // Default as expense
+                  dailyTotals[dateKey] =
+                      dailyTotals[dateKey]! - transaction.amount;
+                }
+              } catch (e) {
+                print('Error processing transaction: $e');
+                continue; // Skip problematic transaction
+              }
+            }
+
+            // Sort dates in descending order (newest first)
+            final sortedDates = groupedTransactions.keys.toList()
+              ..sort((a, b) => b.compareTo(a));
+
+            if (sortedDates.isEmpty) {
+              return Center(
+                child: Text(
                   'No transactions found',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[600],
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              );
+            }
+
+            return ListView.builder(
+              itemCount: sortedDates.length,
+              itemBuilder: (context, dateIndex) {
+                try {
+                  final dateKey = sortedDates[dateIndex];
+                  final date = DateTime.parse(dateKey);
+                  final transactions = groupedTransactions[dateKey]!;
+                  final dailyTotal = dailyTotals[dateKey]!;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: dateIndex == 0 ? 0 : 12),
+                      // Single container for the entire day's transactions
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: Column(
+                          children: [
+                            // Date header with total
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 10),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    DateFormat('EEEE, MMMM d').format(date),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  Builder(builder: (context) {
+                                    try {
+                                      // Format with thousands separators
+                                      final formatter =
+                                          NumberFormat('#,##0', 'en_IN');
+                                      final formattedTotal =
+                                          formatter.format(dailyTotal.abs());
+
+                                      return Text(
+                                        dailyTotal >= 0
+                                            ? '+₹$formattedTotal'
+                                            : '-₹$formattedTotal',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          color: dailyTotal >= 0
+                                              ? Colors.green[400]
+                                              : Colors.red[400],
+                                        ),
+                                      );
+                                    } catch (e) {
+                                      // Fallback for safe display
+                                      return Text(
+                                        dailyTotal >= 0 ? '+₹0' : '-₹0',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          color: dailyTotal >= 0
+                                              ? Colors.green[400]
+                                              : Colors.red[400],
+                                        ),
+                                      );
+                                    }
+                                  }),
+                                ],
+                              ),
+                            ),
+
+                            // Divider between header and transactions
+                            Divider(
+                              height: 1,
+                              thickness: 1,
+                              color: Colors.grey.shade100,
+                            ),
+
+                            // Transaction items for this date
+                            ...transactions.map((transaction) {
+                              try {
+                                final isLastItem =
+                                    transactions.last.id == transaction.id;
+                                return _buildTransactionItemInGroup(
+                                    transaction, isLastItem);
+                              } catch (e) {
+                                print('Error building transaction item: $e');
+                                return Container(); // Return empty container if there's an error
+                              }
+                            }).toList(),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                } catch (e) {
+                  print('Error building date group: $e');
+                  return Container(); // Return empty container for problematic date groups
+                }
+              },
+            );
+          } catch (e) {
+            print('Error building transaction list: $e');
+            return Center(
+              child: Text(
+                'Error displaying transactions',
+                style: TextStyle(color: Colors.red[400]),
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildTransactionItemInGroup(
+      models.Transaction transaction, bool isLastItem) {
+    return Dismissible(
+      key: Key(transaction.id),
+      background: Container(
+        decoration: BoxDecoration(
+          color: Colors.red.shade400,
+          borderRadius: BorderRadius.circular(0),
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 16),
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (direction) async {
+        return await _showDeleteConfirmationDialog();
+      },
+      onDismissed: (direction) {
+        transactionController.deleteTransaction(transaction.id);
+        setState(() {}); // Force rebuild
+      },
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                // Category Icon
+                _buildCategoryIcon(),
+                const SizedBox(width: 12),
+                // Description
+                _buildTransactionDescription(transaction),
+                // Amount
+                _buildTransactionAmount(transaction),
+              ],
+            ),
+          ),
+          // Add divider only if this isn't the last item
+          if (!isLastItem)
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: Colors.grey.shade100,
+              indent: 16,
+              endIndent: 16,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<bool> _showDeleteConfirmationDialog() async {
+    return await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            "Delete Transaction",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            ),
+          ),
+          content: const Text(
+            "Are you sure you want to delete this transaction?",
+            style: TextStyle(fontSize: 16),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          backgroundColor: Colors.white,
+          actions: [
+            Row(
+              children: [
+                Expanded(
+                  child: Material(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: () => Navigator.of(context).pop(false),
+                      child: Container(
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.all(8),
+                        decoration: ShapeDecoration(
+                          shape: RoundedRectangleBorder(
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(10)),
+                            side: BorderSide(color: Colors.grey.shade200),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: black,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Add your first transaction or change filters',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[500],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Material(
+                    color: black,
+                    borderRadius: BorderRadius.circular(10),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: () => Navigator.of(context).pop(true),
+                      child: Container(
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.all(8),
+                        decoration: const ShapeDecoration(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(10)),
+                          ),
+                        ),
+                        child: const Text(
+                          'Delete',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
-          );
-        }
+          ],
+          actionsPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        );
+      },
+    );
+  }
 
-        print(
-            'TRANSACTION SCREEN: Displaying ${transactionController.filteredTransactions.length} transactions');
-        return Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(5),
-            border: Border.all(color: Colors.grey[300]!),
+  Widget _buildCategoryIcon() {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: const Icon(
+        Icons.restaurant,
+        color: Colors.grey,
+        size: 20,
+      ),
+    );
+  }
+
+  Widget _buildTransactionDescription(models.Transaction transaction) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            transaction.category,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: Colors.grey[300]!),
-                  ),
-                ),
-                child: Row(
-                  children: const [
-                    SizedBox(width: 8),
-                    Expanded(
-                      flex: 3,
-                      child: Text(
-                        'Date',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 4,
-                      child: Text(
-                        'Description',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 3,
-                      child: Text(
-                        'Category',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        'Amount',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey,
-                        ),
-                        textAlign: TextAlign.right,
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                  ],
+          Text(
+            transaction.description,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTransactionAmount(models.Transaction transaction) {
+    final categoryMatches = categoryController.categories.where((category) =>
+        category.name.trim().toLowerCase() ==
+        transaction.category.trim().toLowerCase());
+
+    final isExpense = categoryMatches.isNotEmpty
+        ? categoryMatches.first.type == 'expense'
+        : true;
+
+    return Text(
+      isExpense
+          ? '-₹${transaction.formattedAmount}'
+          : '+₹${transaction.formattedAmount}',
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: isExpense ? Colors.red[400] : Colors.green[400],
+      ),
+    );
+  }
+
+  // Original method kept for standalone items if needed
+  Widget _buildStandaloneTransactionItem(models.Transaction transaction) {
+    return Dismissible(
+      key: Key(transaction.id),
+      background: Container(
+        decoration: BoxDecoration(
+          color: Colors.red.shade400,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 16),
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (direction) async {
+        return await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text(
+                "Delete Transaction",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
                 ),
               ),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: transactionController.filteredTransactions.length,
-                  itemBuilder: (context, index) {
-                    final transaction =
-                        transactionController.filteredTransactions[index];
-                    return Dismissible(
-                      key: Key(transaction.id),
-                      background: Container(
-                        color: Colors.red,
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.only(right: 16),
-                        child: const Icon(
-                          Icons.delete,
-                          color: Colors.white,
-                        ),
-                      ),
-                      direction: DismissDirection.endToStart,
-                      confirmDismiss: (direction) async {
-                        return await showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: const Text(
-                                "Delete Transaction",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20,
-                                ),
-                              ),
-                              content: const Text(
-                                "Are you sure you want to delete this transaction?",
-                                style: TextStyle(fontSize: 16),
-                              ),
+              content: const Text(
+                "Are you sure you want to delete this transaction?",
+                style: TextStyle(fontSize: 16),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              backgroundColor: Colors.white,
+              actions: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Material(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(10),
+                          onTap: () => Navigator.of(context).pop(false),
+                          child: Container(
+                            alignment: Alignment.center,
+                            padding: const EdgeInsets.all(8),
+                            decoration: ShapeDecoration(
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(5),
+                                borderRadius:
+                                    const BorderRadius.all(Radius.circular(10)),
+                                side: BorderSide(color: Colors.grey.shade200),
                               ),
-                              backgroundColor: Colors.white,
-                              actions: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Material(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(5),
-                                        child: InkWell(
-                                          borderRadius:
-                                              BorderRadius.circular(5),
-                                          onTap: () =>
-                                              Navigator.of(context).pop(false),
-                                          child: Container(
-                                            alignment: Alignment.center,
-                                            padding: const EdgeInsets.all(15),
-                                            decoration: ShapeDecoration(
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    const BorderRadius.all(
-                                                        Radius.circular(5)),
-                                                side: BorderSide(
-                                                    color: Colors.grey[300]!),
-                                              ),
-                                            ),
-                                            child: const Text(
-                                              'Cancel',
-                                              style: TextStyle(
-                                                color: black,
-                                                fontWeight: FontWeight.w900,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Material(
-                                        color: black,
-                                        borderRadius: BorderRadius.circular(5),
-                                        child: InkWell(
-                                          borderRadius:
-                                              BorderRadius.circular(5),
-                                          onTap: () =>
-                                              Navigator.of(context).pop(true),
-                                          child: Container(
-                                            alignment: Alignment.center,
-                                            padding: const EdgeInsets.all(15),
-                                            decoration: const ShapeDecoration(
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.all(
-                                                    Radius.circular(5)),
-                                              ),
-                                            ),
-                                            child: const Text(
-                                              'Delete',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.w900,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                              actionsPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 12),
-                            );
-                          },
-                        );
-                      },
-                      onDismissed: (direction) {
-                        transactionController.deleteTransaction(transaction.id);
-                      },
-                      child: InkWell(
-                        onTap: () {
-                          // Handle transaction selection
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(
+                                color: black,
+                                fontWeight: FontWeight.w900,
+                              ),
                             ),
                           ),
-                          child: Row(
-                            children: [
-                              const SizedBox(width: 8),
-                              Expanded(
-                                flex: 3,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      DateFormat('dd').format(transaction.date),
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    Text(
-                                      DateFormat('MMM yyyy')
-                                          .format(transaction.date),
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Material(
+                        color: black,
+                        borderRadius: BorderRadius.circular(10),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(10),
+                          onTap: () => Navigator.of(context).pop(true),
+                          child: Container(
+                            alignment: Alignment.center,
+                            padding: const EdgeInsets.all(8),
+                            decoration: const ShapeDecoration(
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(10)),
                               ),
-                              Expanded(
-                                flex: 4,
-                                child: Text(
-                                  transaction.description,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                  ),
-                                ),
+                            ),
+                            child: const Text(
+                              'Delete',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
                               ),
-                              Expanded(
-                                flex: 3,
-                                child: Text(
-                                  transaction.category,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Obx(() {
-                                  final categoryMatches = categoryController
-                                      .categories
-                                      .where((category) =>
-                                          category.name ==
-                                          transaction.category);
-
-                                  final isExpense = categoryMatches.isNotEmpty
-                                      ? categoryMatches.first.type == 'expense'
-                                      : true;
-
-                                  return Text(
-                                    '₹${transaction.amount}',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color:
-                                          isExpense ? Colors.red : Colors.green,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    textAlign: TextAlign.right,
-                                  );
-                                }),
-                              ),
-                              const SizedBox(width: 8),
-                            ],
+                            ),
                           ),
                         ),
                       ),
-                    );
-                  },
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
+              ],
+              actionsPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            );
+          },
         );
-      }),
+      },
+      onDismissed: (direction) {
+        transactionController.deleteTransaction(transaction.id);
+        setState(() {}); // Force rebuild
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        margin: const EdgeInsets.only(bottom: 6),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            // Category Icon
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.restaurant,
+                color: Colors.grey,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Description
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    transaction.category,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    transaction.description,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Amount - Using non-reactive approach
+            Builder(builder: (context) {
+              final categoryMatches = categoryController.categories.where(
+                  (category) =>
+                      category.name.trim().toLowerCase() ==
+                      transaction.category.trim().toLowerCase());
+
+              final isExpense = categoryMatches.isNotEmpty
+                  ? categoryMatches.first.type == 'expense'
+                  : true;
+
+              return Text(
+                isExpense
+                    ? '-₹${transaction.formattedAmount}'
+                    : '+₹${transaction.formattedAmount}',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: isExpense ? Colors.red[400] : Colors.green[400],
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
     );
   }
 }

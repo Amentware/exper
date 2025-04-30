@@ -77,6 +77,9 @@ class CategoryController extends GetxController {
       print('CATEGORY: Categories available: ${categories.length}');
       print(
           'CATEGORY: Category names for dropdown: ${categoryNames.join(', ')}');
+
+      // Ensure income categories are properly marked
+      _ensureIncomeCategories();
     } catch (e) {
       print('CATEGORY: Error fetching categories: $e');
       print('CATEGORY: Stack trace: ${StackTrace.current}');
@@ -376,6 +379,45 @@ class CategoryController extends GetxController {
       await fetchCategories();
     } catch (e) {
       print('CATEGORY: Error creating default categories: $e');
+    }
+  }
+
+  // New method to ensure income categories are properly marked
+  void _ensureIncomeCategories() {
+    // Check for "Salary" category and make sure it's type is "income"
+    final salaryCategories = categories.where((cat) =>
+        cat.name.trim().toLowerCase() == "salary" ||
+        cat.name.trim().toLowerCase().contains("salary"));
+
+    for (var category in salaryCategories) {
+      if (category.type != 'income') {
+        // Fix incorrect type by updating the category
+        updateCategory(category.id, {'type': 'income'});
+        print('CATEGORY: Fixed Salary category type to income');
+      }
+    }
+
+    // Check other common income categories
+    final incomeKeywords = [
+      'income',
+      'salary',
+      'revenue',
+      'wage',
+      'earnings',
+      'stipend',
+      'bonus'
+    ];
+
+    for (var category in categories) {
+      final nameLower = category.name.trim().toLowerCase();
+      bool shouldBeIncome =
+          incomeKeywords.any((keyword) => nameLower.contains(keyword));
+
+      if (shouldBeIncome && category.type != 'income') {
+        // Fix incorrect type
+        updateCategory(category.id, {'type': 'income'});
+        print('CATEGORY: Fixed ${category.name} category type to income');
+      }
     }
   }
 }

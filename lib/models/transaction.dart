@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 class Transaction {
   final String id;
@@ -9,6 +10,18 @@ class Transaction {
   final double amount; // Positive amount (not sign-dependent on expense/income)
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  // Add a getter for safely formatted amount with thousands separators
+  String get formattedAmount {
+    try {
+      // Create a number formatter with thousands separators
+      final formatter = NumberFormat('#,##0', 'en_IN');
+      return formatter.format(amount);
+    } catch (e) {
+      // Fallback for error cases
+      return amount.toStringAsFixed(0);
+    }
+  }
 
   Transaction({
     required this.id,
