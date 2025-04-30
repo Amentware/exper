@@ -26,7 +26,6 @@ class TransactionController extends GetxController {
 
   final startDate = DateTime.now().subtract(const Duration(days: 30)).obs;
   final endDate = DateTime.now().obs;
-
   // Statistics
   final totalIncome = 0.0.obs;
   final totalExpense = 0.0.obs;
