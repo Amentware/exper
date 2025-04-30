@@ -66,7 +66,8 @@ class AuthController extends GetxController {
 
       // Create default categories using CategoryController
       final categoryController = Get.find<CategoryController>();
-      await categoryController.createDefaultCategories();
+      // Directly fetch categories which will create defaults if none exist
+      await categoryController.fetchCategories();
 
       isLoading.value = false;
       Get.offAll(HomeScreen());

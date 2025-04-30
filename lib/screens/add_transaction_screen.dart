@@ -85,6 +85,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         description = selectedCategory.value;
       }
 
+      print(
+          'CREATING TRANSACTION: userId=$userId, description=$description, amount=$amount, category=${selectedCategory.value}, date=$date');
+
       final transaction = Transaction(
         id: '', // Will be set by Firestore
         userId: userId,
@@ -95,6 +98,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         createdAt: now,
         updatedAt: now,
       );
+
+      // Print the exact data being saved to Firestore
+      print('TRANSACTION DATA BEING SAVED: ${transaction.toMap()}');
 
       await transactionController.addTransaction(transaction);
 
@@ -107,6 +113,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       );
     } catch (e) {
       print('Error saving transaction: $e');
+      print('Stack trace: ${StackTrace.current}');
       Get.snackbar(
         'Error',
         'Failed to save transaction',

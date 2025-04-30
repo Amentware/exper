@@ -34,16 +34,67 @@ class Transaction {
   }
 
   factory Transaction.fromMap(Map<String, dynamic> map, String documentId) {
-    return Transaction(
-      id: documentId,
-      userId: map['user_id'] ?? '',
-      description: map['description'] ?? '',
-      amount: (map['amount'] as num).toDouble(),
-      // Handle both category and category_id fields for backward compatibility
-      category: map['category'] ?? map['category_id'] ?? '',
-      date: (map['date'] as Timestamp).toDate(),
-      createdAt: (map['created_at'] as Timestamp).toDate(),
-      updatedAt: (map['updated_at'] as Timestamp).toDate(),
-    );
+    try {
+      // Handle user_id field
+      final userId = map['user_id'] ?? '';
+
+      // Handle description field
+      final description = map['description'] ?? '';
+
+      // Handle amount field
+      double amount;
+      if (map['amount'] is num) {
+        amount = (map['amount'] as num).toDouble();
+      } else {
+        print('WARNING: Invalid amount format: ${map['amount']}');
+        amount = 0.0;
+      }
+
+      // Handle category/category_id field
+      final category = map['category'] ?? map['category_id'] ?? '';
+
+      // Handle date field
+      DateTime date;
+      if (map['date'] is Timestamp) {
+        date = (map['date'] as Timestamp).toDate();
+      } else {
+        print('WARNING: Invalid date format: ${map['date']}');
+        date = DateTime.now();
+      }
+
+      // Handle created_at field
+      DateTime createdAt;
+      if (map['created_at'] is Timestamp) {
+        createdAt = (map['created_at'] as Timestamp).toDate();
+      } else {
+        print('WARNING: Invalid created_at format: ${map['created_at']}');
+        createdAt = DateTime.now();
+      }
+
+      // Handle updated_at field
+      DateTime updatedAt;
+      if (map['updated_at'] is Timestamp) {
+        updatedAt = (map['updated_at'] as Timestamp).toDate();
+      } else {
+        print('WARNING: Invalid updated_at format: ${map['updated_at']}');
+        updatedAt = DateTime.now();
+      }
+
+      return Transaction(
+        id: documentId,
+        userId: userId,
+        description: description,
+        amount: amount,
+        category: category,
+        date: date,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+      );
+    } catch (e) {
+      print('ERROR creating Transaction from map: $e');
+      print('Document ID: $documentId');
+      print('Map data: $map');
+      rethrow;
+    }
   }
 }

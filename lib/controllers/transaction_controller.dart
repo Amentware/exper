@@ -82,27 +82,70 @@ class TransactionController extends GetxController {
         return;
       }
 
-      print(
-          'Fetching transactions for period: ${startDate.value} to ${endDate.value}');
-
-      var query = _firestore
+      // First, check if there are any transactions for this user at all (no date filtering)
+      var allTransactionsQuery = _firestore
           .collection('transactions')
-          .where('user_id', isEqualTo: userId)
-          .where('date',
-              isGreaterThanOrEqualTo: Timestamp.fromDate(startDate.value))
-          .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endDate.value))
-          .orderBy('date', descending: true);
+          .where('user_id', isEqualTo: userId);
 
-      final querySnapshot = await query.get();
-      print('Found ${querySnapshot.docs.length} transactions');
+      var allTransactionsSnapshot = await allTransactionsQuery.get();
 
-      final transactionList = querySnapshot.docs
+      if (allTransactionsSnapshot.docs.isEmpty) {
+        transactions.clear();
+        filteredTransactions.clear();
+        isLoading.value = false;
+        return;
+      }
+
+      List<QueryDocumentSnapshot> transactionDocs = [];
+
+      try {
+        // Try with date filtering - requires Firebase index
+        var query = _firestore
+            .collection('transactions')
+            .where('user_id', isEqualTo: userId)
+            .where('date',
+                isGreaterThanOrEqualTo: Timestamp.fromDate(startDate.value))
+            .where('date',
+                isLessThanOrEqualTo: Timestamp.fromDate(endDate.value))
+            .orderBy('date', descending: true);
+
+        final querySnapshot = await query.get();
+        transactionDocs = querySnapshot.docs;
+      } catch (e) {
+        // Check if this is an index error
+        if (e.toString().contains('requires an index')) {
+          // Use client-side filtering as fallback when index is missing
+          transactionDocs = allTransactionsSnapshot.docs.where((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            if (data.containsKey('date') && data['date'] is Timestamp) {
+              final docDate = (data['date'] as Timestamp).toDate();
+              return docDate
+                      .isAfter(startDate.value.subtract(Duration(days: 1))) &&
+                  docDate.isBefore(endDate.value.add(Duration(days: 1)));
+            }
+            return false;
+          }).toList();
+
+          // Sort manually since we can't use orderBy
+          transactionDocs.sort((a, b) {
+            final aData = a.data() as Map<String, dynamic>;
+            final bData = b.data() as Map<String, dynamic>;
+            final aDate = (aData['date'] as Timestamp).toDate();
+            final bDate = (bData['date'] as Timestamp).toDate();
+            return bDate.compareTo(aDate); // descending order - newest first
+          });
+        } else {
+          // For other errors, rethrow
+          throw e;
+        }
+      }
+
+      final transactionList = transactionDocs
           .map((doc) {
             try {
-              return models.Transaction.fromMap(doc.data(), doc.id);
+              final data = doc.data() as Map<String, dynamic>;
+              return models.Transaction.fromMap(data, doc.id);
             } catch (e) {
-              print('Error parsing transaction ${doc.id}: $e');
-              print('Data: ${doc.data()}');
               return null;
             }
           })
@@ -117,10 +160,9 @@ class TransactionController extends GetxController {
 
       // Calculate statistics
       calculateStatistics();
-
-      print('Loaded ${transactions.length} transactions successfully');
     } catch (e) {
-      print('Error fetching transactions: $e');
+      // Keep this for error handling
+      print('ERROR FETCHING TRANSACTIONS: $e');
     } finally {
       isLoading.value = false;
     }
@@ -153,10 +195,6 @@ class TransactionController extends GetxController {
             return false;
           }
         } else {
-          // If category not found, log for debugging
-          print(
-              'Category not found for transaction: ${transaction.id}, category: ${transaction.category}');
-
           // Default behavior: assume it's an expense if we can't determine type
           if (selectedType.value == 'Income') {
             return false;
@@ -173,6 +211,9 @@ class TransactionController extends GetxController {
 
       return true;
     }).toList();
+
+    // Ensure transactions remain sorted by date (newest first)
+    filtered.sort((a, b) => b.date.compareTo(a.date));
 
     filteredTransactions.addAll(filtered);
   }
@@ -208,7 +249,13 @@ class TransactionController extends GetxController {
 
   Future<void> addTransaction(models.Transaction transaction) async {
     try {
-      await _firestore.collection('transactions').add(transaction.toMap());
+      // Convert the transaction to a map but explicitly use category_id field for compatibility
+      Map<String, dynamic> transactionData = transaction.toMap();
+
+      // Store the category value in both fields for backward compatibility
+      transactionData['category_id'] = transaction.category;
+
+      await _firestore.collection('transactions').add(transactionData);
       await fetchTransactions();
     } catch (e) {
       print('Error adding transaction: $e');
@@ -255,10 +302,6 @@ class TransactionController extends GetxController {
           expense += transaction.amount;
         }
       } else {
-        // If category not found, log for debugging
-        print(
-            'Category not found for statistics: ${transaction.id}, category: ${transaction.category}');
-
         // Default behavior: assume it's an expense if we can't determine type
         expense += transaction.amount;
       }

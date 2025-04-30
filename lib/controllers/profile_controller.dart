@@ -58,21 +58,29 @@ class ProfileController extends GetxController {
   // Get start date from profile or fallback
   DateTime get startDate {
     if (profile.value != null) {
-      return profile.value!.startDate;
+      DateTime result = profile.value!.startDate;
+      print('PROFILE: Using profile start date: ${result.toIso8601String()}');
+      return result;
     }
     // Default fallback
     final now = DateTime.now();
-    return DateTime(now.year, now.month, 1);
+    DateTime fallback = DateTime(now.year, now.month, 1);
+    print('PROFILE: Using fallback start date: ${fallback.toIso8601String()}');
+    return fallback;
   }
 
   // Get end date from profile or fallback
   DateTime get endDate {
     if (profile.value != null) {
-      return profile.value!.endDate;
+      DateTime result = profile.value!.endDate;
+      print('PROFILE: Using profile end date: ${result.toIso8601String()}');
+      return result;
     }
     // Default fallback
     final now = DateTime.now();
-    return DateTime(now.year, now.month + 1, 0);
+    DateTime fallback = DateTime(now.year, now.month + 1, 0);
+    print('PROFILE: Using fallback end date: ${fallback.toIso8601String()}');
+    return fallback;
   }
 
   // Get currency symbol from profile

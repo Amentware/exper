@@ -20,43 +20,39 @@ class TransactionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Transactions',
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildAddTransactionButton(),
+          const SizedBox(height: 16),
+          _buildSearchBar(),
+          const SizedBox(height: 16),
+          Row(
             children: [
-              const Text(
-                'Dashboard',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                ),
+              Expanded(
+                child: _buildFilterDropdown('All Types'),
               ),
-              const SizedBox(height: 16),
-              _buildAddTransactionButton(),
-              const SizedBox(height: 16),
-              _buildSearchBar(),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildFilterDropdown('All Types'),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildFilterDropdown('All Categories'),
-                  ),
-                ],
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildFilterDropdown('All Categories'),
               ),
-              const SizedBox(height: 16),
-              _buildDateRangePicker(),
-              const SizedBox(height: 16),
-              _buildTransactionTable(),
             ],
           ),
-        ),
+          const SizedBox(height: 16),
+          _buildDateRangePicker(),
+          const SizedBox(height: 16),
+          _buildTransactionTable(),
+        ],
       ),
     );
   }
@@ -73,7 +69,7 @@ class TransactionScreen extends StatelessWidget {
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: black,
           borderRadius: BorderRadius.circular(5),
@@ -87,7 +83,7 @@ class TransactionScreen extends StatelessWidget {
               'Add Transaction',
               style: TextStyle(
                 color: Colors.white,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w500,
                 fontSize: 16,
               ),
             ),
@@ -380,29 +376,39 @@ class TransactionScreen extends StatelessWidget {
     return Expanded(
       child: Obx(() {
         if (transactionController.isLoading.value) {
-          return const Center(
+          return Center(
             child: CircularProgressIndicator(
-              color: Colors.black,
+              color: black,
             ),
           );
         }
 
         if (transactionController.filteredTransactions.isEmpty) {
+          print('TRANSACTION SCREEN: No transactions to display');
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
                   Icons.receipt_long_outlined,
-                  size: 64,
+                  size: 48,
                   color: Colors.grey[400],
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'No transactions found',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                     color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Add your first transaction or change filters',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[500],
                   ),
                 ),
               ],
@@ -410,6 +416,8 @@ class TransactionScreen extends StatelessWidget {
           );
         }
 
+        print(
+            'TRANSACTION SCREEN: Displaying ${transactionController.filteredTransactions.length} transactions');
         return Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(5),
@@ -495,24 +503,91 @@ class TransactionScreen extends StatelessWidget {
                           context: context,
                           builder: (BuildContext context) {
                             return AlertDialog(
-                              title: const Text("Confirm"),
-                              content: const Text(
-                                  "Are you sure you want to delete this transaction?"),
-                              actions: [
-                                TextButton(
-                                  child: const Text("Cancel"),
-                                  onPressed: () =>
-                                      Navigator.of(context).pop(false),
+                              title: const Text(
+                                "Delete Transaction",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
                                 ),
-                                TextButton(
-                                  child: const Text(
-                                    "Delete",
-                                    style: TextStyle(color: Colors.red),
-                                  ),
-                                  onPressed: () =>
-                                      Navigator.of(context).pop(true),
+                              ),
+                              content: const Text(
+                                "Are you sure you want to delete this transaction?",
+                                style: TextStyle(fontSize: 16),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                              backgroundColor: Colors.white,
+                              actions: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Material(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(5),
+                                        child: InkWell(
+                                          borderRadius:
+                                              BorderRadius.circular(5),
+                                          onTap: () =>
+                                              Navigator.of(context).pop(false),
+                                          child: Container(
+                                            alignment: Alignment.center,
+                                            padding: const EdgeInsets.all(15),
+                                            decoration: ShapeDecoration(
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    const BorderRadius.all(
+                                                        Radius.circular(5)),
+                                                side: BorderSide(
+                                                    color: Colors.grey[300]!),
+                                              ),
+                                            ),
+                                            child: const Text(
+                                              'Cancel',
+                                              style: TextStyle(
+                                                color: black,
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Material(
+                                        color: black,
+                                        borderRadius: BorderRadius.circular(5),
+                                        child: InkWell(
+                                          borderRadius:
+                                              BorderRadius.circular(5),
+                                          onTap: () =>
+                                              Navigator.of(context).pop(true),
+                                          child: Container(
+                                            alignment: Alignment.center,
+                                            padding: const EdgeInsets.all(15),
+                                            decoration: const ShapeDecoration(
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.all(
+                                                    Radius.circular(5)),
+                                              ),
+                                            ),
+                                            child: const Text(
+                                              'Delete',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
+                              actionsPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
                             );
                           },
                         );
@@ -573,6 +648,7 @@ class TransactionScreen extends StatelessWidget {
                                   style: const TextStyle(
                                     fontSize: 16,
                                   ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               Expanded(

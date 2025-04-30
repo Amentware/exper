@@ -28,18 +28,40 @@ class CategoryController extends GetxController {
       isLoading.value = true;
       final userId = _authController.user.value?.uid;
       if (userId == null) {
+        print('CATEGORY: No user ID found, cannot fetch categories');
         isLoading.value = false;
         return;
       }
+
+      print('CATEGORY: Fetching categories for user $userId');
 
       final querySnapshot = await _firestore
           .collection('categories')
           .where('user_id', isEqualTo: userId)
           .get();
 
-      final categoryList = querySnapshot.docs.map((doc) {
-        return Category.fromMap(doc.data(), doc.id);
-      }).toList();
+      print('CATEGORY: Found ${querySnapshot.docs.length} categories');
+
+      if (querySnapshot.docs.isEmpty) {
+        print('CATEGORY: Creating default categories since none exist');
+        await _createDefaultCategories(userId);
+        return; // fetchCategories will be called again after defaults are created
+      }
+
+      final categoryList = querySnapshot.docs
+          .map((doc) {
+            try {
+              print('CATEGORY: Processing ${doc.id} - ${doc.data()}');
+              return Category.fromMap(doc.data(), doc.id);
+            } catch (e) {
+              print('CATEGORY: Error parsing category ${doc.id}: $e');
+              return null;
+            }
+          })
+          .whereType<Category>()
+          .toList();
+
+      print('CATEGORY: Successfully parsed ${categoryList.length} categories');
 
       categories.clear();
       categories.addAll(categoryList);
@@ -51,8 +73,13 @@ class CategoryController extends GetxController {
       categoryNames.clear();
       categoryNames.add('All Categories');
       categoryNames.addAll(categoryList.map((category) => category.name));
+
+      print('CATEGORY: Categories available: ${categories.length}');
+      print(
+          'CATEGORY: Category names for dropdown: ${categoryNames.join(', ')}');
     } catch (e) {
-      print('Error fetching categories: $e');
+      print('CATEGORY: Error fetching categories: $e');
+      print('CATEGORY: Stack trace: ${StackTrace.current}');
     } finally {
       isLoading.value = false;
     }
@@ -285,58 +312,70 @@ class CategoryController extends GetxController {
     }
   }
 
-  Future<void> createDefaultCategories() async {
+  // Create default categories if none exist
+  Future<void> _createDefaultCategories(String userId) async {
     try {
-      isLoading.value = true;
-      final userId = _authController.user.value?.uid;
-      if (userId == null) {
-        isLoading.value = false;
-        return;
-      }
-
+      print('CATEGORY: Creating default categories');
       final now = DateTime.now();
 
-      // Default categories with type and icon
-      final defaultCategories = [
-        {'name': 'Food', 'type': 'expense', 'icon': 'shopping-cart'},
-        {'name': 'Transportation', 'type': 'expense', 'icon': 'car'},
-        {'name': 'Entertainment', 'type': 'expense', 'icon': 'tag'},
-        {'name': 'Rent', 'type': 'expense', 'icon': 'tag'},
-        {'name': 'Salary', 'type': 'income', 'icon': 'tag'},
-        {'name': 'Petrol', 'type': 'expense', 'icon': 'car'},
-        {'name': 'EMI', 'type': 'expense', 'icon': 'tag'},
-        {'name': 'Shopping', 'type': 'expense', 'icon': 'shopping-cart'},
-        {'name': 'Bills', 'type': 'expense', 'icon': 'tag'},
+      // Default expense categories
+      final defaultExpenseCategories = [
+        'Food',
+        'Transportation',
+        'Entertainment',
+        'Housing',
+        'Utilities',
+        'Healthcare',
+        'Personal',
+        'Education',
+        'Shopping',
+        'Other'
       ];
 
-      // Create a batch to add multiple documents efficiently
-      final batch = FirebaseFirestore.instance.batch();
+      // Default income categories
+      final defaultIncomeCategories = [
+        'Salary',
+        'Freelance',
+        'Investments',
+        'Gifts',
+        'Other Income'
+      ];
 
-      for (var category in defaultCategories) {
-        // Create a new document reference with a UUID
+      // Add expense categories
+      for (var name in defaultExpenseCategories) {
         final docRef = _firestore.collection('categories').doc();
-
-        // Add to batch
-        batch.set(docRef, {
-          'id': docRef.id,
-          'name': category['name'],
-          'type': category['type'],
-          'user_id': userId,
-          'icon': category['icon'],
-          'created_at': Timestamp.fromDate(now),
-          'updated_at': Timestamp.fromDate(now),
-        });
+        final category = Category(
+          id: docRef.id,
+          name: name,
+          type: 'expense',
+          userId: userId,
+          icon: 'default',
+          createdAt: now,
+          updatedAt: now,
+        );
+        await docRef.set(category.toMap());
       }
 
-      // Commit the batch
-      await batch.commit();
+      // Add income categories
+      for (var name in defaultIncomeCategories) {
+        final docRef = _firestore.collection('categories').doc();
+        final category = Category(
+          id: docRef.id,
+          name: name,
+          type: 'income',
+          userId: userId,
+          icon: 'default',
+          createdAt: now,
+          updatedAt: now,
+        );
+        await docRef.set(category.toMap());
+      }
 
-      // Refresh categories list
+      print('CATEGORY: Default categories created successfully');
+      // Fetch the newly created categories
       await fetchCategories();
     } catch (e) {
-      print('Error creating default categories: $e');
-    } finally {
-      isLoading.value = false;
+      print('CATEGORY: Error creating default categories: $e');
     }
   }
 }
