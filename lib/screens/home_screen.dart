@@ -83,21 +83,21 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
         Padding(
-          padding: const EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.only(bottom: 50),
           child: ListTile(
             dense: true,
-            visualDensity: const VisualDensity(horizontal: 0, vertical: -3),
+            visualDensity: const VisualDensity(horizontal: 0, vertical: -2),
             contentPadding: const EdgeInsets.symmetric(horizontal: 12),
             leading: CircleAvatar(
               backgroundColor: Colors.black,
-              radius: 14,
+              radius: 16,
               child: Obx(() => Text(
                     authController.userName.value.isNotEmpty
                         ? authController.userName.value[0]
                         : "U",
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 12,
+                      fontSize: 14,
                     ),
                   )),
             ),
@@ -105,12 +105,12 @@ class HomeScreen extends StatelessWidget {
                   authController.userName.value,
                   style: const TextStyle(
                     fontWeight: FontWeight.w500,
-                    fontSize: 14,
+                    fontSize: 15,
                   ),
                 )),
             trailing: const Icon(
               Icons.logout,
-              size: 20,
+              size: 22,
             ),
             onTap: () => authController.logout(),
           ),
@@ -125,7 +125,7 @@ class HomeScreen extends StatelessWidget {
       () {
         final isSelected = homeController.selectedIndex.value == index;
         return Container(
-          margin: const EdgeInsets.symmetric(vertical: 1, horizontal: 10),
+          margin: const EdgeInsets.symmetric(vertical: 1.5, horizontal: 10),
           padding: const EdgeInsets.symmetric(vertical: 3),
           decoration: BoxDecoration(
             color: isSelected ? Colors.black : Colors.transparent,
@@ -133,7 +133,7 @@ class HomeScreen extends StatelessWidget {
           ),
           child: ListTile(
             dense: true,
-            visualDensity: const VisualDensity(horizontal: 0, vertical: -3),
+            visualDensity: const VisualDensity(horizontal: 0, vertical: -2),
             contentPadding: const EdgeInsets.symmetric(horizontal: 12),
             onTap: () {
               homeController.changeTab(index);
@@ -143,12 +143,12 @@ class HomeScreen extends StatelessWidget {
             leading: Icon(
               icon,
               color: isSelected ? Colors.white : Colors.black,
-              size: 20,
+              size: 22,
             ),
             title: Text(
               title,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 15,
                 fontWeight: FontWeight.normal,
                 color: isSelected ? Colors.white : Colors.black,
               ),
