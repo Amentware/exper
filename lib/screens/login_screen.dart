@@ -18,8 +18,7 @@ class LoginPage extends StatelessWidget {
       FocusManager.instance.primaryFocus?.unfocus();
 
       // Show loading spinner while waiting for login response
-      await authController.login(
-          emailController.text, passwordController.text);
+      await authController.login(emailController.text, passwordController.text);
     }
 
     return Scaffold(
@@ -54,11 +53,10 @@ class LoginPage extends StatelessWidget {
                   hintText: 'Email',
                   fillColor: const Color(0xFFF8F8F8),
                   filled: true,
-                  prefixIcon:
-                      const Icon(Icons.email_outlined, color: black),
+                  prefixIcon: const Icon(Icons.email_outlined, color: black),
                   border: OutlineInputBorder(
                     borderSide: BorderSide.none,
-                    borderRadius: BorderRadius.circular(50),
+                    borderRadius: BorderRadius.circular(5),
                   ),
                 ),
               ),
@@ -74,7 +72,7 @@ class LoginPage extends StatelessWidget {
                       const Icon(Icons.lock_outline_rounded, color: black),
                   border: OutlineInputBorder(
                     borderSide: BorderSide.none,
-                    borderRadius: BorderRadius.circular(50),
+                    borderRadius: BorderRadius.circular(5),
                   ),
                 ),
               ),
@@ -83,14 +81,14 @@ class LoginPage extends StatelessWidget {
                 children: [
                   Expanded(
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(50),
+                      borderRadius: BorderRadius.circular(5),
                       onTap: () => Get.offAll(SignUpPage(),
                           transition: Transition.rightToLeft),
                       child: Container(
                         alignment: Alignment.center,
                         padding: const EdgeInsets.all(15),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(50),
+                          borderRadius: BorderRadius.circular(5),
                           color: Colors.white,
                         ),
                         child: const Text(
@@ -104,13 +102,13 @@ class LoginPage extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(50),
+                      borderRadius: BorderRadius.circular(5),
                       onTap: loginFunction,
                       child: Container(
                         alignment: Alignment.center,
                         padding: const EdgeInsets.all(15),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(50),
+                          borderRadius: BorderRadius.circular(5),
                           color: black,
                         ),
                         child: Obx(
@@ -145,12 +143,12 @@ class LoginPage extends StatelessWidget {
                         Transition.rightToLeft, // Using Cupertino transition
                   ),
                   splashColor:
-                      Colors.blue.withOpacity(0.2), // Optional splash color
+                      Colors.black.withOpacity(0.2), // Optional splash color
                   borderRadius: BorderRadius.circular(
-                      30), // Make splash round by giving border radius
+                      5), // Make splash round by giving border radius
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(
-                        30), // Round the corners of the child widget
+                        5), // Round the corners of the child widget
                     child: const Padding(
                       padding:
                           EdgeInsets.symmetric(vertical: 4.0, horizontal: 10),

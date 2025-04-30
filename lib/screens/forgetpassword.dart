@@ -56,7 +56,7 @@ class ForgetPassword extends StatelessWidget {
                   ),
                   border: OutlineInputBorder(
                     borderSide: BorderSide.none,
-                    borderRadius: BorderRadius.circular(50),
+                    borderRadius: BorderRadius.circular(5),
                   ),
                 ),
               ),
@@ -66,9 +66,9 @@ class ForgetPassword extends StatelessWidget {
                   Expanded(
                     child: Material(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(50),
+                      borderRadius: BorderRadius.circular(5),
                       child: InkWell(
-                        borderRadius: BorderRadius.circular(50),
+                        borderRadius: BorderRadius.circular(5),
                         onTap: () {
                           Get.back();
                         },
@@ -96,10 +96,10 @@ class ForgetPassword extends StatelessWidget {
                   Expanded(
                     child: Material(
                       color: black,
-                      borderRadius: BorderRadius.circular(50),
+                      borderRadius: BorderRadius.circular(5),
                       child: InkWell(
                         splashColor: Colors.black,
-                        borderRadius: BorderRadius.circular(50),
+                        borderRadius: BorderRadius.circular(5),
                         onTap: forgetPasswordFunction,
                         child: Container(
                           alignment: Alignment.center,

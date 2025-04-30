@@ -1,5 +1,7 @@
 import 'package:exper/controllers/auth_controller.dart';
 import 'package:exper/controllers/profile_controller.dart';
+import 'package:exper/controllers/category_controller.dart';
+import 'package:exper/controllers/transaction_controller.dart';
 import 'package:exper/firebase_options.dart';
 import 'package:exper/screens/home_screen.dart';
 import 'package:exper/screens/login_screen.dart';
@@ -11,8 +13,12 @@ import 'package:get/get.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  Get.put(AuthController()); // Initialize AuthController
-  Get.put(ProfileController()); // Initialize ProfileController
+
+  // Initialize controllers
+  Get.put(AuthController());
+  Get.put(ProfileController());
+  Get.put(CategoryController());
+  Get.put(TransactionController());
 
   // Set status bar color to white and icons to black
 

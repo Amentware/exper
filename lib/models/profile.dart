@@ -41,23 +41,22 @@ class ProfileModel {
         data['preferences'] as Map<String, dynamic>? ?? {};
 
     return ProfileModel(
-      id: data['id'] ?? snapshot.id,
+      id: snapshot.id,
       name: data['name'] ?? '',
       email: data['email'] ?? '',
-      authUsersId: data['auth_users_id'] ?? '',
+      authUsersId: data['auth_users_id'] ?? snapshot.id,
 
       // Extract individual preferences
-      defaultDateRange: preferences['default_date_range'] as String? ?? 'month',
-      customStartDate: preferences.containsKey('custom_start_date')
-          ? (preferences['custom_start_date'] as Timestamp).toDate()
+      defaultDateRange: data['default_date_range'] as String? ?? 'month',
+      customStartDate: data.containsKey('custom_start_date')
+          ? (data['custom_start_date'] as Timestamp).toDate()
           : DateTime.now().subtract(const Duration(days: 30)),
-      customEndDate: preferences.containsKey('custom_end_date')
-          ? (preferences['custom_end_date'] as Timestamp).toDate()
+      customEndDate: data.containsKey('custom_end_date')
+          ? (data['custom_end_date'] as Timestamp).toDate()
           : DateTime.now(),
-      currency: preferences['currency'] as String? ?? '₹',
-      theme: preferences['theme'] as String? ?? 'light',
-      notificationsEnabled:
-          preferences['notification_enabled'] as bool? ?? true,
+      currency: data['currency'] as String? ?? '₹',
+      theme: data['theme'] as String? ?? 'light',
+      notificationsEnabled: data['notification_enabled'] as bool? ?? true,
 
       createdAt: (data['created_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updated_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
@@ -68,7 +67,6 @@ class ProfileModel {
   // Convert the model to a map for Firestore
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
       'name': name,
       'email': email,
       'auth_users_id': authUsersId,

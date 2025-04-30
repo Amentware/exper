@@ -13,5 +13,14 @@ pickImage(ImageSource source) async {
 showSnackBar(BuildContext context, String text) {
   return ScaffoldMessenger.of(
     context,
-  ).showSnackBar(SnackBar(content: Text(text)));
+  ).showSnackBar(
+    SnackBar(
+      backgroundColor: Colors.white,
+      behavior: SnackBarBehavior.floating,
+      content: Text(
+        text,
+        style: TextStyle(color: Colors.black),
+      ),
+    ),
+  );
 }

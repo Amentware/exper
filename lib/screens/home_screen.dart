@@ -3,6 +3,11 @@ import 'package:get/get.dart';
 import 'package:exper/controllers/auth_controller.dart';
 import 'package:exper/controllers/profile_controller.dart';
 import 'package:exper/screens/transaction_screen.dart';
+import '../screens/add_transaction_screen.dart';
+import '../screens/dashboard_screen.dart';
+import '../screens/budget_screen.dart';
+import '../screens/reports_screen.dart';
+import '../screens/settings_screen.dart';
 
 class HomeController extends GetxController {
   var selectedIndex = 0.obs;
@@ -52,6 +57,32 @@ class HomeScreen extends StatelessWidget {
             ),
           ],
         ),
+        floatingActionButton: Obx(() => homeController.selectedIndex.value == 0
+                ? Container(
+                    margin: EdgeInsets.only(bottom: 40.0, right: 5),
+                    child: FloatingActionButton(
+                      onPressed: () {
+                        Get.to(() => AddTransactionScreen(),
+                                transition: Transition.rightToLeft)
+                            ?.then((result) {
+                          if (result == true) {
+                            // Refresh transaction data if needed
+                            //Get.find<TransactionController>().fetchTransactions();
+                          }
+                        });
+                      },
+                      backgroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: const Icon(
+                        Icons.add,
+                        color: Colors.white,
+                      ),
+                    ),
+                  )
+                : Container() // Return an empty container when not on dashboard
+            ),
         drawer: Drawer(
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.zero,
@@ -65,11 +96,11 @@ class HomeScreen extends StatelessWidget {
           () => IndexedStack(
             index: homeController.selectedIndex.value,
             children: [
-              const Center(child: Text("Dashboard")),
+              DashboardScreen(),
               TransactionScreen(),
-              const Center(child: Text("Budgets Screen")),
-              const Center(child: Text("Reports Screen")),
-              const Center(child: Text("Settings Screen")),
+              BudgetScreen(),
+              ReportsScreen(),
+              SettingsScreen(),
             ],
           ),
         ),
@@ -131,11 +162,14 @@ class HomeScreen extends StatelessWidget {
                     fontSize: 15,
                   ),
                 )),
-            trailing: const Icon(
-              Icons.logout,
-              size: 22,
+            trailing: IconButton(
+              icon: const Icon(
+                Icons.logout,
+                size: 22,
+              ),
+              onPressed: () => authController.logout(),
             ),
-            onTap: () => authController.logout(),
+            onTap: null, // Disable the whole tile tap
           ),
         ),
       ],

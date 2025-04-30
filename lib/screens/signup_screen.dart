@@ -62,7 +62,7 @@ class SignUpPage extends StatelessWidget {
                   Expanded(
                     child: _buildButton(
                         "Login",
-                    black    ,
+                        black,
                         () => Get.offAll(const LoginPage(),
                             transition: Transition.leftToRight),
                         isOutlined: true),
@@ -71,8 +71,7 @@ class SignUpPage extends StatelessWidget {
                   Expanded(
                     child: Obx(() {
                       // Reactively check if loading is true
-                      return _buildButton(
-                          "Sign Up", black, signUpFunction,
+                      return _buildButton("Sign Up", black, signUpFunction,
                           isLoading: authController.isLoading.value);
                     }),
                   ),
@@ -100,7 +99,7 @@ class SignUpPage extends StatelessWidget {
         prefixIcon: Icon(icon, color: black),
         border: OutlineInputBorder(
           borderSide: BorderSide.none,
-          borderRadius: BorderRadius.circular(50),
+          borderRadius: BorderRadius.circular(5),
         ),
       ),
     );
@@ -110,16 +109,16 @@ class SignUpPage extends StatelessWidget {
       {bool isOutlined = false, bool isLoading = false}) {
     return Material(
       color: isOutlined ? Colors.white : color,
-      borderRadius: BorderRadius.circular(50),
+      borderRadius: BorderRadius.circular(5),
       child: InkWell(
-        borderRadius: BorderRadius.circular(50),
+        borderRadius: BorderRadius.circular(5),
         onTap: onTap,
         child: Container(
           alignment: Alignment.center,
           padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
             color: isOutlined ? Colors.white : color,
-            borderRadius: BorderRadius.circular(50),
+            borderRadius: BorderRadius.circular(5),
           ),
           child: isLoading
               ? const SizedBox(

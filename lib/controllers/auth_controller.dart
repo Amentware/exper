@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import '../screens/home_screen.dart';
 import '../screens/login_screen.dart';
 import '../controllers/profile_controller.dart';
+import '../controllers/category_controller.dart';
 
 class AuthController extends GetxController {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -32,17 +33,21 @@ class AuthController extends GetxController {
 
       // Get the current month's start and end dates
       final now = DateTime.now();
-      final firstDayOfMonth = DateTime(now.year, now.month, 1);
-      final lastDayOfMonth =
-          DateTime(now.year, now.month + 1, 0); // Last day of current month
+      // Use UTC to avoid time zone offset issues when storing in Firestore
+      final firstDayOfMonth = DateTime.utc(now.year, now.month, 1);
+      final lastDayOfMonth = DateTime.utc(now.year, now.month + 1, 0);
+
+      // Log the dates for debugging
+      print(
+          'First day of month: $firstDayOfMonth (${firstDayOfMonth.toIso8601String()})');
+      print(
+          'Last day of month: $lastDayOfMonth (${lastDayOfMonth.toIso8601String()})');
 
       // Create user profile with individual properties
       final profileData = {
-        'id': cred.user!.uid,
         'name': username,
         'email': email,
-        'auth_users_id':
-            cred.user!.uid, // Foreign key reference to Firebase auth
+        'auth_users_id': cred.user!.uid, // Firebase auth user ID
         'default_date_range': 'month',
         'custom_start_date': Timestamp.fromDate(firstDayOfMonth),
         'custom_end_date': Timestamp.fromDate(lastDayOfMonth),
@@ -59,8 +64,9 @@ class AuthController extends GetxController {
           .doc(cred.user!.uid)
           .set(profileData);
 
-      // Create default categories
-      await _createDefaultCategories(cred.user!.uid);
+      // Create default categories using CategoryController
+      final categoryController = Get.find<CategoryController>();
+      await categoryController.createDefaultCategories();
 
       isLoading.value = false;
       Get.offAll(HomeScreen());
@@ -131,9 +137,8 @@ class AuthController extends GetxController {
       Get.snackbar(
         "Reset Mail Sent",
         "A password reset link has been sent to your email.",
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.black,
-        colorText: Colors.white,
+        colorText: Colors.black,
+        backgroundColor: Colors.white,
       );
     } catch (e) {
       isLoading.value = false;
@@ -143,51 +148,6 @@ class AuthController extends GetxController {
         colorText: Colors.black,
         backgroundColor: Colors.white,
       );
-    }
-  }
-
-  // Create default categories for new users
-  Future<void> _createDefaultCategories(String userId) async {
-    try {
-      final now = DateTime.now();
-
-      // Default categories with type and icon
-      final defaultCategories = [
-        {'name': 'Food', 'type': 'expense', 'icon': 'shopping-cart'},
-        {'name': 'Transportation', 'type': 'expense', 'icon': 'car'},
-        {'name': 'Entertainment', 'type': 'expense', 'icon': 'tag'},
-        {'name': 'Rent', 'type': 'expense', 'icon': 'tag'},
-        {'name': 'Salary', 'type': 'income', 'icon': 'tag'},
-        {'name': 'Petrol', 'type': 'expense', 'icon': 'car'},
-        {'name': 'EMI', 'type': 'expense', 'icon': 'tag'},
-        {'name': 'Shopping', 'type': 'expense', 'icon': 'shopping-cart'},
-        {'name': 'Bills', 'type': 'expense', 'icon': 'tag'},
-      ];
-
-      // Create a batch to add multiple documents efficiently
-      final batch = FirebaseFirestore.instance.batch();
-
-      for (var category in defaultCategories) {
-        // Create a new document reference with a UUID
-        final docRef =
-            FirebaseFirestore.instance.collection('categories').doc();
-
-        // Add to batch
-        batch.set(docRef, {
-          'id': docRef.id,
-          'name': category['name'],
-          'type': category['type'],
-          'user_id': userId,
-          'icon': category['icon'],
-          'created_at': Timestamp.fromDate(now),
-          'updated_at': Timestamp.fromDate(now),
-        });
-      }
-
-      // Commit the batch
-      await batch.commit();
-    } catch (e) {
-      print('Error creating default categories: $e');
     }
   }
 }

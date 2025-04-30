@@ -129,7 +129,7 @@ class ProfileController extends GetxController {
       // Add updated timestamp
       updateData['updated_at'] = Timestamp.fromDate(DateTime.now());
 
-      // Update in Firestore
+      // Update in Firestore - use the user's UID as the document ID
       await _firestore.collection('profiles').doc(user.uid).update(updateData);
 
       // Refresh profile
