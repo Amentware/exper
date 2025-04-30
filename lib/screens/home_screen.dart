@@ -22,13 +22,39 @@ class HomeScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.white,
-          title: Obx(() => Text("Hello, ${authController.userName.value}")),
+          // title: Container(
+          //   width: 120,
+          //   height: 60,
+          //   padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 10),
+          //   alignment: Alignment.centerLeft,
+          //   child: Image.asset(
+          //     'assets/images/icons/LOGO2.png',
+          //     fit: BoxFit.contain,
+          //   ),
+          // ),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.logout),
-              onPressed: () {
-                authController.logout();
-              },
+            Container(
+              margin: const EdgeInsets.only(right: 16),
+              child: GestureDetector(
+                onTap: () {
+                  // Navigate to settings tab (index 4)
+                  homeController.changeTab(4);
+                },
+                child: CircleAvatar(
+                  backgroundColor: Colors.black,
+                  radius: 16,
+                  child: Obx(() => Text(
+                        authController.userName.value.isNotEmpty
+                            ? authController.userName.value[0]
+                            : "U",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      )),
+                ),
+              ),
             ),
           ],
         ),
@@ -65,12 +91,13 @@ class HomeScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              padding: const EdgeInsets.only(left: 0, top: 20, bottom: 0),
+              width: 140,
+              height: 70,
+              padding: const EdgeInsets.only(left: 10, top: 20, bottom: 0),
+              margin: const EdgeInsets.only(bottom: 20),
               child: Image.asset(
-                'assets/images/icons/LOGO1.png',
-                width: 120,
-                height: 60,
-                fit: BoxFit.cover,
+                'assets/images/icons/LOGO2.png',
+                fit: BoxFit.contain,
                 alignment: Alignment.topCenter,
               ),
             ),
@@ -83,7 +110,7 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
         Padding(
-          padding: const EdgeInsets.only(bottom: 50),
+          padding: const EdgeInsets.only(bottom: 40),
           child: ListTile(
             dense: true,
             visualDensity: const VisualDensity(horizontal: 0, vertical: -2),
@@ -98,13 +125,14 @@ class HomeScreen extends StatelessWidget {
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
+                      fontWeight: FontWeight.w600,
                     ),
                   )),
             ),
             title: Obx(() => Text(
                   authController.userName.value,
                   style: const TextStyle(
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                     fontSize: 15,
                   ),
                 )),
