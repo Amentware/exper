@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:exper/controllers/auth_controller.dart';
+import 'package:exper/controllers/profile_controller.dart';
+import 'package:exper/screens/transaction_screen.dart';
 
 class HomeController extends GetxController {
   var selectedIndex = 0.obs;
@@ -12,6 +14,7 @@ class HomeController extends GetxController {
 
 class HomeScreen extends StatelessWidget {
   final AuthController authController = Get.find<AuthController>();
+  final ProfileController profileController = Get.find<ProfileController>();
   final HomeController homeController = Get.put(HomeController());
 
   HomeScreen({super.key});
@@ -22,16 +25,6 @@ class HomeScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.white,
-          // title: Container(
-          //   width: 120,
-          //   height: 60,
-          //   padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 10),
-          //   alignment: Alignment.centerLeft,
-          //   child: Image.asset(
-          //     'assets/images/icons/LOGO2.png',
-          //     fit: BoxFit.contain,
-          //   ),
-          // ),
           actions: [
             Container(
               margin: const EdgeInsets.only(right: 16),
@@ -43,16 +36,17 @@ class HomeScreen extends StatelessWidget {
                 child: CircleAvatar(
                   backgroundColor: Colors.black,
                   radius: 16,
-                  child: Obx(() => Text(
-                        authController.userName.value.isNotEmpty
-                            ? authController.userName.value[0]
-                            : "U",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      )),
+                  child: Obx(() {
+                    final userName = profileController.userName;
+                    return Text(
+                      userName.isNotEmpty ? userName[0] : "U",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    );
+                  }),
                 ),
               ),
             ),
@@ -70,12 +64,12 @@ class HomeScreen extends StatelessWidget {
         body: Obx(
           () => IndexedStack(
             index: homeController.selectedIndex.value,
-            children: const [
-              Center(child: Text("Dashboard")),
-              Center(child: Text("Transaction")),
-              Center(child: Text("Budgets Screen")),
-              Center(child: Text("Reports Screen")),
-              Center(child: Text("Settings Screen")),
+            children: [
+              const Center(child: Text("Dashboard")),
+              TransactionScreen(),
+              const Center(child: Text("Budgets Screen")),
+              const Center(child: Text("Reports Screen")),
+              const Center(child: Text("Settings Screen")),
             ],
           ),
         ),
@@ -118,19 +112,20 @@ class HomeScreen extends StatelessWidget {
             leading: CircleAvatar(
               backgroundColor: Colors.black,
               radius: 16,
-              child: Obx(() => Text(
-                    authController.userName.value.isNotEmpty
-                        ? authController.userName.value[0]
-                        : "U",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  )),
+              child: Obx(() {
+                final userName = profileController.userName;
+                return Text(
+                  userName.isNotEmpty ? userName[0] : "U",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                );
+              }),
             ),
             title: Obx(() => Text(
-                  authController.userName.value,
+                  profileController.userName,
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 15,

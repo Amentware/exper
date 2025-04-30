@@ -4,32 +4,23 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../screens/home_screen.dart';
 import '../screens/login_screen.dart';
+import '../controllers/profile_controller.dart';
 
 class AuthController extends GetxController {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   Rx<User?> user = Rx<User?>(FirebaseAuth.instance.currentUser);
   RxBool isLoading = false.obs;
-  RxString userName = ''.obs; // Reactive username
 
   @override
   void onInit() {
     super.onInit();
     user.bindStream(_auth.authStateChanges());
-    ever(user,
-        (_) => fetchUserData()); // Fetch user data when auth state changes
-  }
-
-  // Fetch user data from Firestore
-  void fetchUserData() async {
-    if (user.value != null) {
-      DocumentSnapshot userData = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.value!.uid)
-          .get();
-      userName.value = userData['username'] ?? 'User';
-    } else {
-      userName.value = '';
-    }
+    ever(user, (_) {
+      if (user.value != null) {
+        Get.find<ProfileController>().fetchUserProfile();
+      }
+    });
   }
 
   // Sign up
@@ -39,14 +30,37 @@ class AuthController extends GetxController {
       UserCredential cred = await _auth.createUserWithEmailAndPassword(
           email: email, password: password);
 
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(cred.user!.uid)
-          .set({
-        'username': username,
+      // Get the current month's start and end dates
+      final now = DateTime.now();
+      final firstDayOfMonth = DateTime(now.year, now.month, 1);
+      final lastDayOfMonth =
+          DateTime(now.year, now.month + 1, 0); // Last day of current month
+
+      // Create user profile with individual properties
+      final profileData = {
+        'id': cred.user!.uid,
+        'name': username,
         'email': email,
-        'uid': cred.user!.uid,
-      });
+        'auth_users_id':
+            cred.user!.uid, // Foreign key reference to Firebase auth
+        'default_date_range': 'month',
+        'custom_start_date': Timestamp.fromDate(firstDayOfMonth),
+        'custom_end_date': Timestamp.fromDate(lastDayOfMonth),
+        'currency': '₹', // Default currency symbol
+        'theme': 'light', // Default theme
+        'notification_enabled': true, // Default notification setting
+        'created_at': Timestamp.fromDate(DateTime.now()),
+        'updated_at': Timestamp.fromDate(DateTime.now()),
+        'icon': 'default_profile', // Default profile icon/avatar
+      };
+
+      await _firestore
+          .collection('profiles')
+          .doc(cred.user!.uid)
+          .set(profileData);
+
+      // Create default categories
+      await _createDefaultCategories(cred.user!.uid);
 
       isLoading.value = false;
       Get.offAll(HomeScreen());
@@ -66,10 +80,9 @@ class AuthController extends GetxController {
       Get.snackbar(
         "Sign Up Error",
         errorMessage,
- colorText: Colors.black,
+        colorText: Colors.black,
         backgroundColor: Colors.white,
- );
-
+      );
     }
   }
 
@@ -79,6 +92,7 @@ class AuthController extends GetxController {
       isLoading.value = true;
       await _auth.signInWithEmailAndPassword(email: email, password: password);
       isLoading.value = false;
+
       Get.offAll(HomeScreen());
     } catch (e) {
       isLoading.value = false;
@@ -96,9 +110,9 @@ class AuthController extends GetxController {
       Get.snackbar(
         "Login Error",
         errorMessage,
- colorText: Colors.black,
+        colorText: Colors.black,
         backgroundColor: Colors.white,
- );
+      );
     }
   }
 
@@ -123,18 +137,57 @@ class AuthController extends GetxController {
       );
     } catch (e) {
       isLoading.value = false;
-      showErrorSnackbar("Error", e.toString());
+      Get.snackbar(
+        "Reset Mail Error",
+        e.toString(),
+        colorText: Colors.black,
+        backgroundColor: Colors.white,
+      );
     }
   }
 
-  // Utility method for displaying errors
-  void showErrorSnackbar(String title, String message) {
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: Colors.redAccent,
-      colorText: Colors.white,
-    );
+  // Create default categories for new users
+  Future<void> _createDefaultCategories(String userId) async {
+    try {
+      final now = DateTime.now();
+
+      // Default categories with type and icon
+      final defaultCategories = [
+        {'name': 'Food', 'type': 'expense', 'icon': 'shopping-cart'},
+        {'name': 'Transportation', 'type': 'expense', 'icon': 'car'},
+        {'name': 'Entertainment', 'type': 'expense', 'icon': 'tag'},
+        {'name': 'Rent', 'type': 'expense', 'icon': 'tag'},
+        {'name': 'Salary', 'type': 'income', 'icon': 'tag'},
+        {'name': 'Petrol', 'type': 'expense', 'icon': 'car'},
+        {'name': 'EMI', 'type': 'expense', 'icon': 'tag'},
+        {'name': 'Shopping', 'type': 'expense', 'icon': 'shopping-cart'},
+        {'name': 'Bills', 'type': 'expense', 'icon': 'tag'},
+      ];
+
+      // Create a batch to add multiple documents efficiently
+      final batch = FirebaseFirestore.instance.batch();
+
+      for (var category in defaultCategories) {
+        // Create a new document reference with a UUID
+        final docRef =
+            FirebaseFirestore.instance.collection('categories').doc();
+
+        // Add to batch
+        batch.set(docRef, {
+          'id': docRef.id,
+          'name': category['name'],
+          'type': category['type'],
+          'user_id': userId,
+          'icon': category['icon'],
+          'created_at': Timestamp.fromDate(now),
+          'updated_at': Timestamp.fromDate(now),
+        });
+      }
+
+      // Commit the batch
+      await batch.commit();
+    } catch (e) {
+      print('Error creating default categories: $e');
+    }
   }
 }
