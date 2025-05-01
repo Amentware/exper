@@ -515,176 +515,118 @@ class _TransactionScreenState extends State<TransactionScreen> {
   }
 
   Widget _buildDateRangePicker() {
-    return InkWell(
-      onTap: () async {
-        try {
-          final DateTimeRange? picked = await showDateRangePicker(
-            context: context,
-            initialDateRange: DateTimeRange(
-              start: transactionController.startDate.value,
-              end: transactionController.endDate.value,
-            ),
-            firstDate: DateTime(2020),
-            lastDate: DateTime.now().add(const Duration(days: 365)),
-            builder: (context, child) {
-              return Theme(
-                data: ThemeData.light().copyWith(
-                  colorScheme: const ColorScheme.light(
-                    primary: Colors.black,
-                    onPrimary: Colors.white,
-                    surface: Colors.white,
-                    onSurface: Colors.black,
-                    secondaryContainer:
-                        Color(0xFFE0E0E0), // For range selection
-                    onSecondaryContainer:
-                        Colors.black87, // Text on range selection
-                  ),
-                  dialogBackgroundColor: Colors.white,
-                  textButtonTheme: TextButtonThemeData(
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.black, // Button text color
-                    ),
-                  ),
-                  // Customize calendar day text styles
-                  textTheme: TextTheme(
-                    // Day numbers in calendar
-                    bodyMedium: TextStyle(
-                      color: Colors.black,
-                      fontSize: 20.0,
+    return Obx(() {
+      final dateFormat = DateFormat('MMM dd, yyyy');
+
+      return GestureDetector(
+        onTap: () => _showDateRangePicker(context),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.calendar_today,
+                      size: 20, color: Colors.black87),
+                  const SizedBox(width: 12),
+                  Text(
+                    transactionController.selectedDateRange.value,
+                    style: const TextStyle(
+                      fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
-                    // Weekday headers (S M T W T F S)
-                    titleSmall: TextStyle(
-                      color: Colors.black87,
-                      fontSize: 20.0,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    // Month year picker (May 2024)
-                    titleMedium: TextStyle(
-                      color: Colors.black,
-                      fontSize: 20.0,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    // Selected date text (Thu, May 1)
-                    headlineMedium: TextStyle(
-                      color: Colors.black,
-                      fontSize: 36.0,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    // Title at the top of dialog (Select date)
-                    titleLarge: TextStyle(
-                      color: Colors.black,
-                      fontSize: 28.0,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  appBarTheme: const AppBarTheme(
-                    backgroundColor: Colors.white,
-                    iconTheme: IconThemeData(color: Colors.black),
-                    titleTextStyle: TextStyle(
-                      color: Colors.black,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  // Apply rounded corners to the date picker dialog
-                  dialogTheme: DialogTheme(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                ),
-                // Force dialog mode with rounded corners
-                child: Dialog(
-                  insetPadding: const EdgeInsets.symmetric(
-                      horizontal: 16.0, vertical: 24.0),
-                  backgroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Container(
-                    width: MediaQuery.of(context).size.width * 0.95,
-                    height: MediaQuery.of(context).size.height * 0.7,
-                    padding: EdgeInsets.zero,
-                    margin: EdgeInsets.zero,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      color: Colors.white,
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: MediaQuery(
-                        data: MediaQuery.of(context).copyWith(
-                          textScaleFactor: 1.0,
-                          padding: EdgeInsets.zero,
-                        ),
-                        child: child!,
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          );
-
-          if (picked != null) {
-            print('Date range selected: ${picked.start} to ${picked.end}');
-            // Use local filtering instead of updating Firebase
-            await transactionController.filterByDateRangeLocally(
-                picked.start, picked.end);
-            setState(() {}); // Force rebuild
-          }
-        } catch (e) {
-          print('Error in date range picker: $e');
-          // Show error dialog
-          showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: const Text('Error'),
-                content: const Text(
-                    'There was a problem with the date picker. Please try again.'),
-                actions: [
-                  TextButton(
-                    child: const Text('OK'),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
                   ),
                 ],
-              );
-            },
-          );
-        }
-      },
-      child: Container(
-        height: 40,
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.grey.shade200),
+              ),
+              const Icon(Icons.arrow_drop_down, color: Colors.black54),
+            ],
+          ),
         ),
-        child: Row(
-          children: [
-            Icon(Icons.calendar_today, size: 18, color: black),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                transactionController.selectedDateRange.value,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Colors.black,
-                  fontWeight: FontWeight.w500,
-                ),
+      );
+    });
+  }
+
+  Future<void> _showDateRangePicker(BuildContext context) async {
+    final initialDateRange = DateTimeRange(
+      start: transactionController.startDate.value,
+      end: transactionController.endDate.value,
+    );
+
+    final pickedDateRange = await showDateRangePicker(
+      context: context,
+      initialDateRange: initialDateRange,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2025, 12, 31),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Colors.black,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+              secondaryContainer: Color(0xFFE0E0E0), // For range selection
+              onSecondaryContainer: Colors.black87, // Text on range selection
+            ),
+            dialogBackgroundColor: Colors.white,
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.black, // Button text color
               ),
             ),
-            Icon(Icons.arrow_drop_down, color: black),
-          ],
-        ),
-      ),
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Colors.white,
+              iconTheme: IconThemeData(color: Colors.black),
+              titleTextStyle: TextStyle(
+                  color: Colors.black,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold),
+            ),
+            dialogTheme: DialogTheme(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+          // Force dialog mode instead of fullscreen on mobile
+          child: Dialog(
+            insetPadding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+            backgroundColor: Colors.white,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: Colors.white,
+              ),
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.9,
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: child!,
+              ),
+            ),
+          ),
+        );
+      },
     );
+
+    if (pickedDateRange != null) {
+      // Use local filtering instead of updating Firebase
+      await transactionController.filterByDateRangeLocally(
+          pickedDateRange.start, pickedDateRange.end);
+      setState(() {}); // Force rebuild
+    }
   }
 
   Widget _buildTransactionTable() {

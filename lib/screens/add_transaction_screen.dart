@@ -277,7 +277,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       enableDrag: true, // Ensure dragging is enabled
       builder: (BuildContext context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.5, // 50% of screen initially
+          initialChildSize: 0.7, // 70% of screen initially
           minChildSize: 0.3, // Minimum size when collapsed
           maxChildSize: 0.8, // Maximum size when expanded
           expand: false,
