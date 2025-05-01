@@ -185,7 +185,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(10), // Updated to radius 10
         border: Border.all(color: Colors.grey.shade200),
       ),
       child: DropdownButtonHideUnderline(
@@ -200,17 +200,51 @@ class _TransactionScreenState extends State<TransactionScreen> {
           alignment: Alignment.centerLeft,
           onChanged: (String? newValue) {
             if (newValue != null) {
+              // Check if the current category is valid with the new type
+              String currentCategory =
+                  transactionController.selectedCategory.value;
+
               transactionController.setType(newValue);
+
+              // Reset to 'All Categories' when switching types
+              if (newValue != 'All Types' &&
+                  currentCategory != 'All Categories') {
+                // If current category doesn't match new type, reset to 'All Categories'
+                bool categoryMatchesType = categoryController.categories
+                    .where((category) =>
+                        category.name == currentCategory &&
+                        category.type == newValue.toLowerCase())
+                    .isNotEmpty;
+
+                if (!categoryMatchesType) {
+                  transactionController.setCategory('All Categories');
+                }
+              }
+
               setState(() {}); // Force rebuild
             }
           },
           items: transactionController.types
               .map<DropdownMenuItem<String>>((String value) {
+            // Get appropriate icon for each type
+            IconData iconData;
+            switch (value) {
+              case 'Income':
+                iconData = Icons.arrow_upward_outlined;
+                break;
+              case 'Expense':
+                iconData = Icons.arrow_downward_outlined;
+                break;
+              case 'All Types':
+              default:
+                iconData = Icons.filter_list_outlined;
+            }
+
             return DropdownMenuItem<String>(
               value: value,
               child: Row(
                 children: [
-                  Icon(Icons.filter_list_outlined, size: 18, color: black),
+                  Icon(iconData, size: 18, color: black),
                   const SizedBox(width: 12),
                   Text(
                     value,
@@ -230,58 +264,235 @@ class _TransactionScreenState extends State<TransactionScreen> {
   }
 
   Widget _buildCategoryDropdown() {
-    // Simple dropdown without GetX reactivity
-    return Container(
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade200),
+    // Get the displayed category name (could be 'All Categories' or a category name)
+    String displayCategory = 'All Categories';
+    IconData categoryIcon = Icons.category_outlined;
+
+    // Get the current category selection
+    if (transactionController.selectedCategory.value != 'All Categories') {
+      // Try to find the category by ID and get its name
+      final category = categoryController
+          .getCategoryById(transactionController.selectedCategory.value);
+      if (category != null) {
+        displayCategory = category.name;
+        categoryIcon = categoryController.getCategoryIcon(category.id);
+      }
+    }
+
+    return InkWell(
+      onTap: () async {
+        await _showCategoryDialog(context);
+        // Force rebuild after dialog is closed
+        setState(() {});
+      },
+      child: Container(
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Row(
+          children: [
+            Icon(categoryIcon, size: 18, color: black),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                displayCategory,
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
+            Icon(Icons.arrow_drop_down, color: black),
+          ],
+        ),
       ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: transactionController.selectedCategory.value,
-          icon: Padding(
-            padding: const EdgeInsets.only(left: 8.0),
-            child: Icon(Icons.arrow_drop_down, color: black),
+    );
+  }
+
+  Future<void> _showCategoryDialog(BuildContext context) {
+    // Get filtered categories based on the current type filter
+    final List<String> filteredNames = _getFilteredCategoryNames();
+
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
           ),
-          isExpanded: true,
-          isDense: true,
-          alignment: Alignment.centerLeft,
-          onChanged: (String? newValue) {
-            if (newValue != null) {
-              transactionController.setCategory(newValue);
-              setState(() {}); // Force rebuild
-            }
-          },
-          items: categoryController.categoryNames
-              .map<DropdownMenuItem<String>>((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Row(
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: Colors.white,
+            ),
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.9,
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Column(
                 children: [
-                  Icon(Icons.category_outlined, size: 18, color: black),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      value,
-                      style: const TextStyle(
+                  AppBar(
+                    title: Text(
+                      'Select Category',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
                         color: Colors.black,
                         fontSize: 16,
-                        fontWeight: FontWeight.w500,
                       ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
+                    ),
+                    backgroundColor: Colors.white,
+                    elevation: 0,
+                    toolbarHeight: 48,
+                    leading: IconButton(
+                      icon:
+                          Icon(Icons.arrow_back, color: Colors.black, size: 20),
+                      onPressed: () => Get.back(),
+                    ),
+                  ),
+                  Expanded(
+                    child: GridView.count(
+                      crossAxisCount: 4,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      childAspectRatio: 0.8,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 12,
+                      children: filteredNames.map((categoryName) {
+                        // Special case for 'All Categories'
+                        if (categoryName == 'All Categories') {
+                          return InkWell(
+                            onTap: () {
+                              transactionController
+                                  .setCategory('All Categories');
+                              // Update the UI after selection
+                              setState(() {});
+                              Get.back();
+                            },
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 60,
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.filter_list_outlined,
+                                      size: 28,
+                                      color: black,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'All',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        // Get the category to find its ID for the icon
+                        final category =
+                            categoryController.getCategoryByName(categoryName);
+                        final categoryId = category?.id;
+
+                        return InkWell(
+                          onTap: () {
+                            if (category != null) {
+                              // Pass the category ID, not the name
+                              transactionController.setCategory(category.id);
+                            } else {
+                              transactionController.setCategory(categoryName);
+                            }
+                            // Update the UI after selection
+                            setState(() {});
+                            Get.back();
+                          },
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 60,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    categoryController
+                                        .getCategoryIcon(categoryId),
+                                    size: 28,
+                                    color: black,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                categoryName,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
                     ),
                   ),
                 ],
               ),
-            );
-          }).toList(),
-        ),
-      ),
+            ),
+          ),
+        );
+      },
     );
+  }
+
+  // Helper function to get filtered category names based on selected type
+  List<String> _getFilteredCategoryNames() {
+    // If "All Types" is selected, return all categories
+    if (transactionController.selectedType.value == 'All Types') {
+      return categoryController.categoryNames;
+    }
+
+    // Otherwise filter based on type (Income or Expense)
+    final categoryType = transactionController.selectedType.value.toLowerCase();
+
+    // Always include "All Categories" as the first option
+    final filteredNames = ['All Categories'];
+
+    // Add categories with matching type
+    filteredNames.addAll(categoryController.categories
+        .where((category) => category.type == categoryType)
+        .map((category) => category.name));
+
+    return filteredNames;
   }
 
   Widget _buildDateRangePicker() {
@@ -315,6 +526,39 @@ class _TransactionScreenState extends State<TransactionScreen> {
                       foregroundColor: Colors.black, // Button text color
                     ),
                   ),
+                  // Customize calendar day text styles
+                  textTheme: TextTheme(
+                    // Day numbers in calendar
+                    bodyMedium: TextStyle(
+                      color: Colors.black,
+                      fontSize: 20.0,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    // Weekday headers (S M T W T F S)
+                    titleSmall: TextStyle(
+                      color: Colors.black87,
+                      fontSize: 20.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    // Month year picker (May 2024)
+                    titleMedium: TextStyle(
+                      color: Colors.black,
+                      fontSize: 20.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    // Selected date text (Thu, May 1)
+                    headlineMedium: TextStyle(
+                      color: Colors.black,
+                      fontSize: 36.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    // Title at the top of dialog (Select date)
+                    titleLarge: TextStyle(
+                      color: Colors.black,
+                      fontSize: 28.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   appBarTheme: const AppBarTheme(
                     backgroundColor: Colors.white,
                     iconTheme: IconThemeData(color: Colors.black),
@@ -324,8 +568,42 @@ class _TransactionScreenState extends State<TransactionScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  // Apply rounded corners to the date picker dialog
+                  dialogTheme: DialogTheme(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
                 ),
-                child: child!,
+                // Force dialog mode with rounded corners
+                child: Dialog(
+                  insetPadding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 24.0),
+                  backgroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Container(
+                    width: MediaQuery.of(context).size.width * 0.95,
+                    height: MediaQuery.of(context).size.height * 0.7,
+                    padding: EdgeInsets.zero,
+                    margin: EdgeInsets.zero,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.white,
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: MediaQuery(
+                        data: MediaQuery.of(context).copyWith(
+                          textScaleFactor: 1.0,
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: child!,
+                      ),
+                    ),
+                  ),
+                ),
               );
             },
           );
@@ -488,10 +766,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
                 groupedTransactions[dateKey]!.add(transaction);
 
                 // Calculate daily total (negative for expense, positive for income)
-                final categoryMatches = categoryController.categories.where(
-                    (category) =>
-                        category.name.trim().toLowerCase() ==
-                        transaction.category.trim().toLowerCase());
+                final categoryMatches = categoryController.categories
+                    .where((category) => category.id == transaction.categoryId);
 
                 if (categoryMatches.isNotEmpty) {
                   final category = categoryMatches.first;
@@ -685,8 +961,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                // Category Icon
-                _buildCategoryIcon(),
+                // Updated to use category-specific icon
+                _buildCategoryIcon(transaction.categoryId),
                 const SizedBox(width: 12),
                 // Description
                 _buildTransactionDescription(transaction),
@@ -799,7 +1075,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
     );
   }
 
-  Widget _buildCategoryIcon() {
+  Widget _buildCategoryIcon(String categoryId) {
     return Container(
       width: 40,
       height: 40,
@@ -807,9 +1083,9 @@ class _TransactionScreenState extends State<TransactionScreen> {
         color: Colors.grey[100],
         borderRadius: BorderRadius.circular(10),
       ),
-      child: const Icon(
-        Icons.restaurant,
-        color: Colors.grey,
+      child: Icon(
+        categoryController.getCategoryIcon(categoryId),
+        color: black,
         size: 20,
       ),
     );
@@ -821,7 +1097,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            transaction.category,
+            transactionController.getCategoryNameById(transaction.categoryId),
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
@@ -834,15 +1110,22 @@ class _TransactionScreenState extends State<TransactionScreen> {
               color: Colors.grey[600],
             ),
           ),
+          // Added time display
+          Text(
+            DateFormat('MMM d, yyyy - h:mm a').format(transaction.date),
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[500],
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildTransactionAmount(models.Transaction transaction) {
-    final categoryMatches = categoryController.categories.where((category) =>
-        category.name.trim().toLowerCase() ==
-        transaction.category.trim().toLowerCase());
+    final categoryMatches = categoryController.categories
+        .where((category) => category.id == transaction.categoryId);
 
     final isExpense = categoryMatches.isNotEmpty
         ? categoryMatches.first.type == 'expense'
@@ -924,7 +1207,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    transaction.category,
+                    transactionController
+                        .getCategoryNameById(transaction.categoryId),
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
@@ -942,10 +1226,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
             ),
             // Amount - Using non-reactive approach
             Builder(builder: (context) {
-              final categoryMatches = categoryController.categories.where(
-                  (category) =>
-                      category.name.trim().toLowerCase() ==
-                      transaction.category.trim().toLowerCase());
+              final categoryMatches = categoryController.categories
+                  .where((category) => category.id == transaction.categoryId);
 
               final isExpense = categoryMatches.isNotEmpty
                   ? categoryMatches.first.type == 'expense'

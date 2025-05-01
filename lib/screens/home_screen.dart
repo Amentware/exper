@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:exper/controllers/auth_controller.dart';
 import 'package:exper/controllers/profile_controller.dart';
+import 'package:exper/controllers/category_controller.dart';
 import 'package:exper/screens/transaction_screen.dart';
 import '../screens/add_transaction_screen.dart';
 import '../screens/dashboard_screen.dart';
@@ -17,12 +18,36 @@ class HomeController extends GetxController {
   }
 }
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({Key? key}) : super(key: key);
+
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
   final AuthController authController = Get.find<AuthController>();
   final ProfileController profileController = Get.find<ProfileController>();
+  final CategoryController categoryController = Get.find<CategoryController>();
   final HomeController homeController = Get.put(HomeController());
 
-  HomeScreen({super.key});
+  @override
+  void initState() {
+    super.initState();
+    // Ensure categories are loaded
+    _ensureCategoriesLoaded();
+  }
+
+  // Make sure categories are available for the UI
+  Future<void> _ensureCategoriesLoaded() async {
+    if (categoryController.categories.isEmpty) {
+      print('HOME: Categories empty, fetching');
+      await categoryController.fetchCategories();
+    } else {
+      print(
+          'HOME: Categories already loaded: ${categoryController.categories.length}');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -19,6 +19,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final descriptionController = TextEditingController();
   final amountController = TextEditingController();
   final dateController = TextEditingController();
+  final timeController = TextEditingController();
   final formKey = GlobalKey<FormState>();
 
   final authController = Get.find<AuthController>();
@@ -34,6 +35,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   void initState() {
     super.initState();
     dateController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    timeController.text = DateFormat('h:mm a').format(DateTime.now());
 
     // Initialize selected category from the list if available
     if (categoryController.categoryNames.isNotEmpty) {
@@ -56,6 +58,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     descriptionController.dispose();
     amountController.dispose();
     dateController.dispose();
+    timeController.dispose();
     super.dispose();
   }
 
@@ -77,8 +80,20 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     try {
       final userId = authController.user.value!.uid;
       final amount = double.parse(amountController.text);
-      // No need to apply sign based on transaction type
-      final date = DateFormat('yyyy-MM-dd').parse(dateController.text);
+
+      // Parse date and time separately and combine them
+      final dateOnly = DateFormat('yyyy-MM-dd').parse(dateController.text);
+      final timeOnly = DateFormat('h:mm a').parse(timeController.text);
+
+      // Combine date and time
+      final date = DateTime(
+        dateOnly.year,
+        dateOnly.month,
+        dateOnly.day,
+        timeOnly.hour,
+        timeOnly.minute,
+      );
+
       final now = DateTime.now();
 
       // Use category as description if no description is provided
@@ -87,15 +102,24 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         description = selectedCategory.value;
       }
 
+      // Get the category ID for the selected category name
+      final categoryObj =
+          categoryController.getCategoryByName(selectedCategory.value);
+      if (categoryObj == null) {
+        throw Exception('Category not found: ${selectedCategory.value}');
+      }
+
+      final categoryId = categoryObj.id;
+
       print(
-          'CREATING TRANSACTION: userId=$userId, description=$description, amount=$amount, category=${selectedCategory.value}, date=$date');
+          'CREATING TRANSACTION: userId=$userId, description=$description, amount=$amount, categoryId=$categoryId, date=$date');
 
       final transaction = Transaction(
         id: '', // Will be set by Firestore
         userId: userId,
         description: description,
-        amount: amount, // Use amount directly without applying sign
-        category: selectedCategory.value,
+        amount: amount,
+        categoryId: categoryId,
         date: date,
         createdAt: now,
         updatedAt: now,
@@ -151,6 +175,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               onPrimary: Colors.white,
               surface: Colors.white,
               onSurface: black,
+              secondaryContainer: Color(0xFFE0E0E0), // For range selection
+              onSecondaryContainer: Colors.black87, // Text on range selection
             ),
             dialogBackgroundColor: Colors.white,
             textButtonTheme: TextButtonThemeData(
@@ -161,10 +187,82 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 ),
               ),
             ),
+            // Customize calendar day text styles
+            textTheme: TextTheme(
+              // Day numbers in calendar
+              bodyMedium: TextStyle(
+                color: Colors.black,
+                fontSize: 20.0,
+                fontWeight: FontWeight.w500,
+              ),
+              // Weekday headers (S M T W T F S)
+              titleSmall: TextStyle(
+                color: Colors.black87,
+                fontSize: 20.0,
+                fontWeight: FontWeight.bold,
+              ),
+              // Month year picker (May 2024)
+              titleMedium: TextStyle(
+                color: Colors.black,
+                fontSize: 20.0,
+                fontWeight: FontWeight.bold,
+              ),
+              // Selected date text (Thu, May 1)
+              headlineMedium: TextStyle(
+                color: Colors.black,
+                fontSize: 36.0,
+                fontWeight: FontWeight.bold,
+              ),
+              // Title at the top of dialog (Select date)
+              titleLarge: TextStyle(
+                color: Colors.black,
+                fontSize: 28.0,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Colors.white,
+              iconTheme: IconThemeData(color: Colors.black),
+              titleTextStyle: TextStyle(
+                color: Colors.black,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            dialogTheme: DialogTheme(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
           ),
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-            child: child!,
+          // Force dialog mode with rounded corners
+          child: Dialog(
+            //insetPadding:
+            // const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.9,
+              height: MediaQuery.of(context).size.height * 0.8,
+              padding: EdgeInsets.zero,
+              margin: EdgeInsets.zero,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                color: Colors.white,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: MediaQuery(
+                  data: MediaQuery.of(context).copyWith(
+                    textScaleFactor: 1.0,
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: child!,
+                ),
+              ),
+            ),
           ),
         );
       },
@@ -172,9 +270,231 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
     if (picked != null) {
       setState(() {
+        // Format the date to show the day name
         dateController.text = DateFormat('yyyy-MM-dd').format(picked);
+        // Update the UI displayed format to show day name
+        final displayDate = DateFormat('EEE, MMM d').format(picked);
+        // Since dateController is used internally, we keep it as is
+        // But we could display the formatted date in the UI
       });
     }
+  }
+
+  Future<void> _selectTime(BuildContext context) async {
+    // Parse existing time or default to current time
+    final TimeOfDay initialTime = timeController.text.isNotEmpty
+        ? TimeOfDay.fromDateTime(
+            DateFormat('h:mm a').parse(timeController.text))
+        : TimeOfDay.now();
+
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: ColorScheme.light(
+              primary: black,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: black,
+              secondaryContainer: Color(0xFFE0E0E0),
+              onSecondaryContainer: Colors.black87,
+            ),
+            dialogBackgroundColor: Colors.white,
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: black,
+                textStyle: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Colors.white,
+              iconTheme: IconThemeData(color: Colors.black),
+              titleTextStyle: TextStyle(
+                color: Colors.black,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            dialogTheme: DialogTheme(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+          // Force dialog mode with rounded corners
+          child: Dialog(
+            //insetPadding:
+            //const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: Colors.white,
+              ),
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.9,
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: child!,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        // Format the time to 12-hour format with AM/PM
+        final now = DateTime.now();
+        final selectedTime = DateTime(
+          now.year,
+          now.month,
+          now.day,
+          picked.hour,
+          picked.minute,
+        );
+        timeController.text = DateFormat('h:mm a').format(selectedTime);
+      });
+    }
+  }
+
+  Future<void> _showCategoryDialog(
+      BuildContext context, String typeFilter) async {
+    // Get categories of the selected type from the controller
+    final filteredCategories = categoryController.categories
+        .where((category) => category.type == typeFilter)
+        .toList();
+
+    if (filteredCategories.isEmpty) {
+      Get.snackbar(
+        'Error',
+        'No ${typeFilter} categories available. Please add categories first.',
+        colorText: Colors.white,
+        backgroundColor: Colors.black,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(10),
+      );
+      return;
+    }
+
+    // Update selected category when switching between expense/income
+    if (selectedCategory.value.isEmpty ||
+        !filteredCategories
+            .map((c) => c.name)
+            .contains(selectedCategory.value)) {
+      if (filteredCategories.isNotEmpty) {
+        selectedCategory.value = filteredCategories.first.name;
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: Colors.white,
+            ),
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.9,
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Column(
+                children: [
+                  AppBar(
+                    title: Text(
+                      'Select ${typeFilter[0].toUpperCase() + typeFilter.substring(1)} Category',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                        fontSize: 16,
+                      ),
+                    ),
+                    backgroundColor: Colors.white,
+                    elevation: 0,
+                    toolbarHeight: 48,
+                    leading: IconButton(
+                      icon:
+                          Icon(Icons.arrow_back, color: Colors.black, size: 20),
+                      onPressed: () => Get.back(),
+                    ),
+                  ),
+                  Expanded(
+                    child: GridView.count(
+                      padding: const EdgeInsets.all(12),
+                      crossAxisCount: 4,
+                      childAspectRatio: 0.8,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 12,
+                      children: filteredCategories.map((category) {
+                        return InkWell(
+                          onTap: () {
+                            selectedCategory.value = category.name;
+                            Get.back();
+                          },
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 60,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    categoryController
+                                        .getCategoryIcon(category.id),
+                                    size: 28,
+                                    color: black,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                category.name,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 2,
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -225,8 +545,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   // Transaction type selector
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF8F8F8),
-                      borderRadius: BorderRadius.circular(5),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.grey.shade200),
                     ),
                     child: Obx(() => Row(
                           children: [
@@ -240,7 +561,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                     color: isExpense.value
                                         ? black
                                         : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(5),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
                                   alignment: Alignment.center,
                                   child: Text(
@@ -265,7 +586,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                     color: !isExpense.value
                                         ? black
                                         : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(5),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
                                   alignment: Alignment.center,
                                   child: Text(
@@ -293,7 +614,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         TextInputType.numberWithOptions(decimal: true),
                     decoration: InputDecoration(
                       hintText: 'Amount',
-                      fillColor: const Color(0xFFF8F8F8),
+                      fillColor: Colors.white,
                       filled: true,
                       prefixIcon: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -303,8 +624,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       prefixIconConstraints:
                           BoxConstraints(minWidth: 45, minHeight: 45),
                       border: OutlineInputBorder(
-                        borderSide: BorderSide.none,
-                        borderRadius: BorderRadius.circular(5),
+                        borderSide: BorderSide(color: Colors.grey.shade200),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey.shade200),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey.shade200),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       contentPadding:
                           EdgeInsets.symmetric(vertical: 16, horizontal: 12),
@@ -327,7 +656,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     controller: descriptionController,
                     decoration: InputDecoration(
                       hintText: 'Description',
-                      fillColor: const Color(0xFFF8F8F8),
+                      fillColor: Colors.white,
                       filled: true,
                       prefixIcon: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -337,8 +666,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       prefixIconConstraints:
                           BoxConstraints(minWidth: 45, minHeight: 45),
                       border: OutlineInputBorder(
-                        borderSide: BorderSide.none,
-                        borderRadius: BorderRadius.circular(5),
+                        borderSide: BorderSide(color: Colors.grey.shade200),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey.shade200),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey.shade200),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       contentPadding:
                           EdgeInsets.symmetric(vertical: 16, horizontal: 12),
@@ -347,7 +684,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
                   const SizedBox(height: 16),
 
-                  // Category dropdown
+                  // Category selection field (now a button that opens a dialog)
                   Obx(() {
                     // Filter categories based on transaction type (expense/income)
                     final String typeFilter =
@@ -356,7 +693,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     // Get categories of the selected type from the controller
                     final filteredCategories = categoryController.categories
                         .where((category) => category.type == typeFilter)
-                        .map((category) => category.name)
                         .toList();
 
                     if (filteredCategories.isEmpty) {
@@ -368,118 +704,57 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
                     // Update selected category when switching between expense/income
                     if (selectedCategory.value.isEmpty ||
-                        !filteredCategories.contains(selectedCategory.value)) {
+                        !filteredCategories
+                            .map((c) => c.name)
+                            .contains(selectedCategory.value)) {
                       if (filteredCategories.isNotEmpty) {
-                        selectedCategory.value = filteredCategories.first;
+                        selectedCategory.value = filteredCategories.first.name;
                       }
                     }
 
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(5),
+                    // Get the category object for the currently selected category
+                    final selectedCategoryObj = categoryController
+                        .getCategoryByName(selectedCategory.value);
+
+                    return InkWell(
+                      onTap: () => _showCategoryDialog(context, typeFilter),
                       child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8F8F8),
-                          borderRadius: BorderRadius.circular(5),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.grey.shade200),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 0),
-                        child: DropdownButtonFormField<String>(
-                          value: filteredCategories
-                                  .contains(selectedCategory.value)
-                              ? selectedCategory.value
-                              : (filteredCategories.isNotEmpty
-                                  ? filteredCategories.first
-                                  : null),
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderSide: BorderSide.none,
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide.none,
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide.none,
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            prefixIcon: Padding(
+                        child: Row(
+                          children: [
+                            Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 12),
-                              child: Icon(Icons.category_outlined,
-                                  color: black, size: 20),
+                              child: Icon(
+                                selectedCategoryObj != null
+                                    ? categoryController
+                                        .getCategoryIcon(selectedCategoryObj.id)
+                                    : Icons.category_outlined,
+                                color: black,
+                                size: 20,
+                              ),
                             ),
-                            prefixIconConstraints:
-                                BoxConstraints(minWidth: 45, minHeight: 45),
-                            contentPadding: EdgeInsets.only(
-                                top: 16, bottom: 16, left: 0, right: 12),
-                            fillColor: const Color(0xFFF8F8F8),
-                            filled: true,
-                          ),
-                          dropdownColor: Colors.white,
-                          isExpanded: true,
-                          itemHeight: 50,
-                          icon: Padding(
-                            padding: const EdgeInsets.only(right: 12),
-                            child: Icon(Icons.arrow_drop_down, color: black),
-                          ),
-                          style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.black,
-                              fontWeight: FontWeight.w500),
-                          selectedItemBuilder: (BuildContext context) {
-                            return filteredCategories
-                                .map<Widget>((String item) {
-                              return Container(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  item,
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              );
-                            }).toList();
-                          },
-                          hint: Text(
-                            'Select Category',
-                            style: TextStyle(
-                                color: Colors.black54,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500),
-                          ),
-                          menuMaxHeight: 300,
-                          borderRadius: BorderRadius.circular(5),
-                          items: filteredCategories.map((category) {
-                            return DropdownMenuItem<String>(
-                              value: category,
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 8.0),
-                                child: Text(
-                                  category,
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                            Expanded(
+                              child: Text(
+                                selectedCategory.value,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.black87,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            if (value != null) {
-                              selectedCategory.value = value;
-                            }
-                          },
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please select a category';
-                            }
-                            return null;
-                          },
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(right: 12),
+                              child: Icon(Icons.arrow_drop_down, color: black),
+                            ),
+                          ],
                         ),
                       ),
                     );
@@ -487,44 +762,101 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
                   const SizedBox(height: 16),
 
-                  // Date picker
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(5),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(5),
-                        onTap: () => _selectDate(context),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 0, vertical: 0),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8F8F8),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          child: Row(
-                            children: [
-                              Padding(
+                  // Date picker section
+                  Row(
+                    children: [
+                      // Date picker
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(10),
+                              onTap: () => _selectDate(context),
+                              child: Container(
+                                height: 54,
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 16),
-                                child: Icon(Icons.calendar_today,
-                                    color: black, size: 20),
+                                    horizontal: 0, vertical: 0),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border:
+                                      Border.all(color: Colors.grey.shade200),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16),
+                                      child: Icon(Icons.calendar_today,
+                                          color: black, size: 22),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        DateFormat('EEE, MMM d').format(
+                                            DateFormat('yyyy-MM-dd')
+                                                .parse(dateController.text)),
+                                        style: const TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.black87,
+                                            fontWeight: FontWeight.w500),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              SizedBox(
-                                width: 4,
-                              ),
-                              Text(
-                                dateController.text,
-                                style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.black87,
-                                    fontWeight: FontWeight.w500),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
+
+                      SizedBox(width: 12),
+
+                      // Time picker
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(10),
+                              onTap: () => _selectTime(context),
+                              child: Container(
+                                height: 54,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 0, vertical: 0),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border:
+                                      Border.all(color: Colors.grey.shade200),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16),
+                                      child: Icon(Icons.access_time,
+                                          color: black, size: 22),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      timeController.text,
+                                      style: const TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.black87,
+                                          fontWeight: FontWeight.w500),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 32),
@@ -535,18 +867,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       Expanded(
                         child: Material(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(5),
+                          borderRadius: BorderRadius.circular(10),
                           child: InkWell(
-                            borderRadius: BorderRadius.circular(5),
+                            borderRadius: BorderRadius.circular(10),
                             onTap: () => Get.back(),
                             child: Container(
                               alignment: Alignment.center,
                               padding: const EdgeInsets.all(15),
-                              decoration: const ShapeDecoration(
+                              decoration: ShapeDecoration(
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.all(
-                                    Radius.circular(5),
+                                    Radius.circular(10),
                                   ),
+                                  side: BorderSide(color: Colors.grey.shade200),
                                 ),
                               ),
                               child: const Text(
@@ -564,10 +897,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       Expanded(
                         child: Material(
                           color: black,
-                          borderRadius: BorderRadius.circular(5),
+                          borderRadius: BorderRadius.circular(10),
                           child: InkWell(
                             splashColor: Colors.black,
-                            borderRadius: BorderRadius.circular(5),
+                            borderRadius: BorderRadius.circular(10),
                             onTap: isLoading.value ? null : saveTransaction,
                             child: Container(
                               alignment: Alignment.center,
@@ -575,7 +908,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               decoration: const ShapeDecoration(
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.all(
-                                    Radius.circular(5),
+                                    Radius.circular(10),
                                   ),
                                 ),
                               ),

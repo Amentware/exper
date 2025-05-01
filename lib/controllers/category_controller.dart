@@ -26,6 +26,7 @@ class CategoryController extends GetxController {
   Future<void> fetchCategories() async {
     try {
       isLoading.value = true;
+
       final userId = _authController.user.value?.uid;
       if (userId == null) {
         print('CATEGORY: No user ID found, cannot fetch categories');
@@ -35,16 +36,20 @@ class CategoryController extends GetxController {
 
       print('CATEGORY: Fetching categories for user $userId');
 
+      // Simple query without ordering to avoid index requirement
       final querySnapshot = await _firestore
           .collection('categories')
           .where('user_id', isEqualTo: userId)
-          .get();
+          // Removed orderBy to avoid index requirement
+          .get(GetOptions(
+              source: Source.serverAndCache)); // Use cache when available
 
       print('CATEGORY: Found ${querySnapshot.docs.length} categories');
 
+      // If no categories exist for this user, create default ones
       if (querySnapshot.docs.isEmpty) {
         print('CATEGORY: Creating default categories since none exist');
-        await _createDefaultCategories(userId);
+        await createDefaultCategories(userId);
         return; // fetchCategories will be called again after defaults are created
       }
 
@@ -63,6 +68,10 @@ class CategoryController extends GetxController {
 
       print('CATEGORY: Successfully parsed ${categoryList.length} categories');
 
+      // Sort categories by name client-side instead of in the query
+      categoryList.sort((a, b) => a.name.compareTo(b.name));
+
+      // Clear existing categories and update with new data
       categories.clear();
       categories.addAll(categoryList);
 
@@ -293,7 +302,7 @@ class CategoryController extends GetxController {
     }
   }
 
-  Future<bool> hasTransactions(String categoryName) async {
+  Future<bool> hasTransactions(String categoryId) async {
     try {
       final userId = _authController.user.value?.uid;
       if (userId == null) return false;
@@ -301,7 +310,7 @@ class CategoryController extends GetxController {
       final querySnapshot = await _firestore
           .collection('transactions')
           .where('user_id', isEqualTo: userId)
-          .where('category', isEqualTo: categoryName)
+          .where('category_id', isEqualTo: categoryId)
           .limit(1)
           .get();
 
@@ -324,7 +333,7 @@ class CategoryController extends GetxController {
       }
 
       // Check if category has transactions
-      final hasLinkedTransactions = await hasTransactions(category.name);
+      final hasLinkedTransactions = await hasTransactions(category.id);
       if (hasLinkedTransactions) {
         Get.snackbar(
           'Error',
@@ -365,69 +374,86 @@ class CategoryController extends GetxController {
   }
 
   // Create default categories if none exist
-  Future<void> _createDefaultCategories(String userId) async {
+  Future<void> createDefaultCategories(String userId) async {
     try {
       print('CATEGORY: Creating default categories');
       final now = DateTime.now();
 
-      // Default expense categories
+      // Default expense categories with icons
       final defaultExpenseCategories = [
-        'Food',
-        'Transportation',
-        'Entertainment',
-        'Housing',
-        'Utilities',
-        'Healthcare',
-        'Personal',
-        'Education',
-        'Shopping',
-        'Other'
+        {'name': 'Food', 'icon': 'food'},
+        {'name': 'Petrol', 'icon': 'petrol'},
+        {'name': 'Entertainment', 'icon': 'entertainment'},
+        {'name': 'Rent', 'icon': 'rent'},
+        {'name': 'Utilities', 'icon': 'utilities'},
+        {'name': 'Personal', 'icon': 'personal'},
+        {'name': 'Shopping', 'icon': 'shopping'},
+        {'name': 'Other', 'icon': 'other'}
       ];
 
-      // Default income categories
+      // Default income categories with icons
       final defaultIncomeCategories = [
-        'Salary',
-        'Freelance',
-        'Investments',
-        'Gifts',
-        'Other Income'
+        {'name': 'Salary', 'icon': 'salary'},
       ];
+
+      // Create a batch for better performance and atomicity
+      final batch = _firestore.batch();
 
       // Add expense categories
-      for (var name in defaultExpenseCategories) {
-        final docRef = _firestore.collection('categories').doc();
-        final category = Category(
-          id: docRef.id,
-          name: name,
-          type: 'expense',
-          userId: userId,
-          icon: 'default',
-          createdAt: now,
-          updatedAt: now,
-        );
-        await docRef.set(category.toMap());
+      for (var catInfo in defaultExpenseCategories) {
+        try {
+          final docRef = _firestore.collection('categories').doc();
+          final category = Category(
+            id: docRef.id,
+            name: catInfo['name']!,
+            type: 'expense',
+            userId: userId,
+            icon: catInfo['icon']!,
+            createdAt: now,
+            updatedAt: now,
+          );
+          batch.set(docRef, category.toMap());
+          print('CATEGORY: Added expense category: ${catInfo['name']}');
+        } catch (e) {
+          print(
+              'CATEGORY: Error adding expense category ${catInfo['name']}: $e');
+        }
       }
 
       // Add income categories
-      for (var name in defaultIncomeCategories) {
-        final docRef = _firestore.collection('categories').doc();
-        final category = Category(
-          id: docRef.id,
-          name: name,
-          type: 'income',
-          userId: userId,
-          icon: 'default',
-          createdAt: now,
-          updatedAt: now,
-        );
-        await docRef.set(category.toMap());
+      for (var catInfo in defaultIncomeCategories) {
+        try {
+          final docRef = _firestore.collection('categories').doc();
+          final category = Category(
+            id: docRef.id,
+            name: catInfo['name']!,
+            type: 'income',
+            userId: userId,
+            icon: catInfo['icon']!,
+            createdAt: now,
+            updatedAt: now,
+          );
+          batch.set(docRef, category.toMap());
+          print('CATEGORY: Added income category: ${catInfo['name']}');
+        } catch (e) {
+          print(
+              'CATEGORY: Error adding income category ${catInfo['name']}: $e');
+        }
       }
+
+      // Commit the batch
+      await batch.commit();
 
       print('CATEGORY: Default categories created successfully');
       // Fetch the newly created categories
-      await fetchCategories();
+      try {
+        await fetchCategories();
+      } catch (e) {
+        print('CATEGORY: Error fetching categories after creation: $e');
+      }
     } catch (e) {
       print('CATEGORY: Error creating default categories: $e');
+      print('CATEGORY: Stack trace: ${StackTrace.current}');
     }
   }
 
@@ -467,6 +493,85 @@ class CategoryController extends GetxController {
         updateCategory(category.id, {'type': 'income'});
         print('CATEGORY: Fixed ${category.name} category type to income');
       }
+    }
+  }
+
+  // Add this method after the other methods
+  IconData getCategoryIcon(String? categoryId) {
+    try {
+      // If no category ID provided, return a default icon
+      if (categoryId == null) {
+        return Icons.category;
+      }
+
+      // Find the category
+      final category = getCategoryById(categoryId);
+      if (category == null) {
+        return Icons.category;
+      }
+
+      // Map category names or icon string identifiers to appropriate Material icons
+      final iconName = category.icon.isNotEmpty
+          ? category.icon
+          : category.name.toLowerCase();
+
+      switch (iconName.toLowerCase()) {
+        // Expense categories
+        case 'food':
+          return Icons.restaurant;
+        case 'petrol':
+        case 'gas':
+        case 'fuel':
+          return Icons.local_gas_station;
+        case 'entertainment':
+          return Icons.movie;
+        case 'rent':
+        case 'housing':
+          return Icons.home;
+        case 'utilities':
+          return Icons.bolt;
+        case 'personal':
+          return Icons.person;
+        case 'shopping':
+          return Icons.shopping_cart;
+        case 'other':
+          return Icons.more_horiz;
+        case 'transport':
+        case 'transportation':
+          return Icons.directions_bus;
+        case 'travel':
+          return Icons.flight;
+        case 'healthcare':
+        case 'medical':
+          return Icons.local_hospital;
+        case 'education':
+          return Icons.school;
+        case 'groceries':
+          return Icons.local_grocery_store;
+
+        // Income categories
+        case 'salary':
+        case 'wage':
+        case 'earnings':
+          return Icons.payments;
+        case 'income':
+          return Icons.attach_money;
+        case 'bonus':
+          return Icons.card_giftcard;
+        case 'investment':
+          return Icons.trending_up;
+
+        // Default
+        case 'default':
+        default:
+          // Return a generic icon for unknown cases
+          return category.type == 'income'
+              ? Icons.arrow_upward
+              : Icons.arrow_downward;
+      }
+    } catch (e) {
+      print('Error getting category icon: $e');
+      return Icons.category;
     }
   }
 }

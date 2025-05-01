@@ -174,8 +174,34 @@ class DashboardScreen extends StatelessWidget {
                   fontSize: 20,
                   fontWeight: FontWeight.bold),
             ),
+            dialogTheme: DialogTheme(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
           ),
-          child: child!,
+          // Force dialog mode instead of fullscreen on mobile
+          child: Dialog(
+            insetPadding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+            backgroundColor: Colors.white,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: Colors.white,
+              ),
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.9,
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: child!,
+              ),
+            ),
+          ),
         );
       },
     );
@@ -353,7 +379,7 @@ class DashboardScreen extends StatelessWidget {
       for (var transaction in transactionController.transactions) {
         // Find category to determine transaction type
         final categoryMatches = categoryController.categories
-            .where((category) => category.name == transaction.category);
+            .where((category) => category.id == transaction.categoryId);
 
         if (categoryMatches.isNotEmpty) {
           final category = categoryMatches.first;
@@ -673,7 +699,7 @@ class DashboardScreen extends StatelessWidget {
 
       // Print transactions for debugging
       transactionController.transactions.forEach((transaction) => print(
-          'Transaction: ${transaction.date} - ${transaction.amount} - ${transaction.category}'));
+          'Transaction: ${transaction.date} - ${transaction.amount} - ${transaction.categoryId}'));
 
       // Use all transactions and filter for our 7-day window and category if applicable
       for (var transaction in transactionController.transactions) {
@@ -694,7 +720,7 @@ class DashboardScreen extends StatelessWidget {
 
               // Find category to determine expense type
               final categoryMatches = categoryController.categories
-                  .where((category) => category.name == transaction.category);
+                  .where((category) => category.id == transaction.categoryId);
 
               if (categoryMatches.isNotEmpty) {
                 final category = categoryMatches.first;
@@ -965,7 +991,7 @@ class DashboardScreen extends StatelessWidget {
                       // Find category to determine transaction type
                       final categoryMatches = categoryController.categories
                           .where((category) =>
-                              category.name == transaction.category);
+                              category.id == transaction.categoryId);
                       final isExpense = categoryMatches.isNotEmpty
                           ? categoryMatches.first.type == 'expense'
                           : true;
@@ -974,7 +1000,7 @@ class DashboardScreen extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 8.0),
                         child: Row(
                           children: [
-                            // Transaction icon
+                            // Transaction icon - updated to use category-specific icon
                             Container(
                               alignment: Alignment.center,
                               width: 44,
@@ -985,10 +1011,9 @@ class DashboardScreen extends StatelessWidget {
                               ),
                               child: Center(
                                 child: Icon(
-                                  isExpense
-                                      ? Icons.arrow_downward_outlined
-                                      : Icons.arrow_upward_outlined,
-                                  color: isExpense ? Colors.red : Colors.green,
+                                  categoryController
+                                      .getCategoryIcon(transaction.categoryId),
+                                  color: black,
                                   size: 20,
                                 ),
                               ),
@@ -1012,11 +1037,22 @@ class DashboardScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    transaction.category,
+                                    transactionController.getCategoryNameById(
+                                        transaction.categoryId),
                                     style: TextStyle(
                                       color: Colors.grey[600],
                                       height: 1.2,
                                       fontSize: 14,
+                                    ),
+                                  ),
+                                  // Added time display for transactions
+                                  Text(
+                                    DateFormat('MMM d, yyyy - h:mm a')
+                                        .format(transaction.date),
+                                    style: TextStyle(
+                                      color: Colors.grey[500],
+                                      height: 1.2,
+                                      fontSize: 12,
                                     ),
                                   ),
                                 ],
@@ -1061,7 +1097,7 @@ class DashboardScreen extends StatelessWidget {
       for (var transaction in transactionController.transactions) {
         // Find category to determine transaction type
         final categoryMatches = categoryController.categories
-            .where((category) => category.name == transaction.category);
+            .where((category) => category.id == transaction.categoryId);
 
         if (categoryMatches.isNotEmpty) {
           final category = categoryMatches.first;
@@ -1110,62 +1146,67 @@ class DashboardScreen extends StatelessWidget {
                     ),
                   )
                 : Column(
-                    children: topCategories
-                        .map((entry) => Padding(
-                              padding: const EdgeInsets.only(bottom: 12.0),
+                    children: topCategories.map((entry) {
+                      // Find the category by name to get its ID and icon
+                      final category =
+                          categoryController.getCategoryByName(entry.key);
+                      final categoryId = category?.id;
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // Category icon
+                            Container(
+                              width: 38,
+                              height: 38,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Center(
+                                child: Icon(
+                                  categoryController
+                                      .getCategoryIcon(categoryId),
+                                  color: black,
+                                  size: 18,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+
+                            // Category name and amount with better alignment
+                            Expanded(
                               child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  // Category icon
-                                  Container(
-                                    width: 38,
-                                    height: 38,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[100],
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: const Center(
-                                      child: Icon(
-                                        Icons.category,
-                                        color: Colors.grey,
-                                        size: 18,
-                                      ),
+                                  Text(
+                                    entry.key,
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 15,
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
-
-                                  // Category name and amount with better alignment
-                                  Expanded(
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          entry.key,
-                                          overflow: TextOverflow.ellipsis,
-                                          maxLines: 1,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 15,
-                                          ),
-                                        ),
-                                        Text(
-                                          '${profileController.currency}${formatter.format(entry.value)}',
-                                          style: const TextStyle(
-                                            color: Colors.black,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 15,
-                                          ),
-                                        ),
-                                      ],
+                                  Text(
+                                    '${profileController.currency}${formatter.format(entry.value)}',
+                                    style: const TextStyle(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
                                     ),
                                   ),
                                 ],
                               ),
-                            ))
-                        .toList(),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
                   ),
           ],
         ),

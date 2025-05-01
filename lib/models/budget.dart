@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class Budget {
   final String id;
   final String userId;
-  final String category;
+  final String categoryId;
   final double amount;
   final int month;
   final int year;
@@ -13,7 +13,7 @@ class Budget {
   Budget({
     required this.id,
     required this.userId,
-    required this.category,
+    required this.categoryId,
     required this.amount,
     required this.month,
     required this.year,
@@ -26,7 +26,7 @@ class Budget {
     return Budget(
       id: documentId,
       userId: map['user_id'] ?? '',
-      category: map['category'] ?? '',
+      categoryId: map['category_id'] ?? map['category'] ?? '',
       amount: (map['amount'] ?? 0.0).toDouble(),
       month: map['month'] ?? 1,
       year: map['year'] ?? DateTime.now().year,
@@ -39,7 +39,7 @@ class Budget {
   Map<String, dynamic> toMap() {
     return {
       'user_id': userId,
-      'category': category,
+      'category_id': categoryId,
       'amount': amount,
       'month': month,
       'year': year,
@@ -52,7 +52,7 @@ class Budget {
   Budget copyWith({
     String? id,
     String? userId,
-    String? category,
+    String? categoryId,
     double? amount,
     int? month,
     int? year,
@@ -62,7 +62,7 @@ class Budget {
     return Budget(
       id: id ?? this.id,
       userId: userId ?? this.userId,
-      category: category ?? this.category,
+      categoryId: categoryId ?? this.categoryId,
       amount: amount ?? this.amount,
       month: month ?? this.month,
       year: year ?? this.year,

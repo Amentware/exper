@@ -499,7 +499,11 @@ class BudgetScreen extends StatelessWidget {
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(5),
                                 onTap: () => _showEditBudgetDialog(
-                                    context, category, budget),
+                                    context,
+                                    category,
+                                    budgetController
+                                        .getCategoryIdForName(category),
+                                    budget),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 16, vertical: 8),
@@ -527,7 +531,8 @@ class BudgetScreen extends StatelessWidget {
                                 onTap: () => _confirmDeleteBudget(
                                     context,
                                     budgetController
-                                            .getBudgetForCategory(category)
+                                            .getBudgetForCategoryId(
+                                                item['categoryId'] as String)
                                             ?.id ??
                                         ''),
                                 child: Container(
@@ -565,11 +570,11 @@ class BudgetScreen extends StatelessWidget {
     final formKey = GlobalKey<FormState>();
     final TextEditingController amountController = TextEditingController();
     RxString selectedCategory = ''.obs;
+    RxString selectedCategoryId = ''.obs;
 
     // Get expense categories
     final expenseCategories = categoryController.categories
         .where((cat) => cat.type == 'expense')
-        .map((cat) => cat.name)
         .toList();
 
     // Check if we have expense categories
@@ -600,7 +605,8 @@ class BudgetScreen extends StatelessWidget {
     }
 
     // Set initial selected category
-    selectedCategory.value = expenseCategories.first;
+    selectedCategory.value = expenseCategories.first.name;
+    selectedCategoryId.value = expenseCategories.first.id;
 
     Get.dialog(
       Dialog(
@@ -626,9 +632,9 @@ class BudgetScreen extends StatelessWidget {
                 // Category dropdown
                 Obx(() {
                   // Check if this category already has a budget
-                  if (selectedCategory.value.isNotEmpty) {
+                  if (selectedCategoryId.value.isNotEmpty) {
                     final existingBudget = budgetController
-                        .getBudgetForCategory(selectedCategory.value);
+                        .getBudgetForCategoryId(selectedCategoryId.value);
                     if (existingBudget != null &&
                         amountController.text.isEmpty) {
                       // Pre-fill with existing budget amount
@@ -667,17 +673,25 @@ class BudgetScreen extends StatelessWidget {
                         ),
                         items: expenseCategories.map((category) {
                           return DropdownMenuItem<String>(
-                            value: category,
-                            child: Text(category),
+                            value: category.name,
+                            child: Text(category.name),
                           );
                         }).toList(),
                         onChanged: (value) {
                           if (value != null) {
                             selectedCategory.value = value;
 
+                            // Find the matching category object and get its ID
+                            final categoryObj = expenseCategories.firstWhere(
+                              (cat) => cat.name == value,
+                              orElse: () => expenseCategories.first,
+                            );
+                            selectedCategoryId.value = categoryObj.id;
+
                             // Check if this category already has a budget
                             final existingBudget =
-                                budgetController.getBudgetForCategory(value);
+                                budgetController.getBudgetForCategoryId(
+                                    selectedCategoryId.value);
                             if (existingBudget != null) {
                               // Pre-fill with existing budget amount
                               amountController.text =
@@ -784,7 +798,7 @@ class BudgetScreen extends StatelessWidget {
                               final amount =
                                   double.parse(amountController.text);
                               budgetController.setBudget(
-                                  selectedCategory.value, amount);
+                                  selectedCategoryId.value, amount);
                               Get.back();
                             }
                           },
@@ -819,8 +833,8 @@ class BudgetScreen extends StatelessWidget {
     );
   }
 
-  void _showEditBudgetDialog(
-      BuildContext context, String category, double currentAmount) {
+  void _showEditBudgetDialog(BuildContext context, String categoryName,
+      String categoryId, double currentAmount) {
     final formKey = GlobalKey<FormState>();
     final TextEditingController amountController = TextEditingController(
       text: currentAmount.toString(),
@@ -839,7 +853,7 @@ class BudgetScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Edit Budget for $category',
+                  'Edit Budget for $categoryName',
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -928,7 +942,7 @@ class BudgetScreen extends StatelessWidget {
                             if (formKey.currentState!.validate()) {
                               final amount =
                                   double.parse(amountController.text);
-                              budgetController.setBudget(category, amount);
+                              budgetController.setBudget(categoryId, amount);
                               Get.back();
                             }
                           },

@@ -6,7 +6,7 @@ class Transaction {
   final String userId;
   final DateTime date;
   final String description;
-  final String category; // Using category name directly
+  final String categoryId; // Changed from category to categoryId
   final double amount; // Positive amount (not sign-dependent on expense/income)
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -28,7 +28,7 @@ class Transaction {
     required this.userId,
     required this.date,
     required this.description,
-    required this.category,
+    required this.categoryId, // Changed from category to categoryId
     required this.amount,
     required this.createdAt,
     required this.updatedAt,
@@ -39,7 +39,7 @@ class Transaction {
       'user_id': userId,
       'description': description,
       'amount': amount,
-      'category': category, // Save as category (not category_id)
+      'category_id': categoryId, // Changed from category to category_id
       'date': Timestamp.fromDate(date),
       'created_at': Timestamp.fromDate(createdAt),
       'updated_at': Timestamp.fromDate(updatedAt),
@@ -63,8 +63,8 @@ class Transaction {
         amount = 0.0;
       }
 
-      // Handle category/category_id field
-      final category = map['category'] ?? map['category_id'] ?? '';
+      // Handle category_id field - support both old format (category) and new format (category_id)
+      final categoryId = map['category_id'] ?? map['category'] ?? '';
 
       // Handle date field
       DateTime date;
@@ -98,7 +98,7 @@ class Transaction {
         userId: userId,
         description: description,
         amount: amount,
-        category: category,
+        categoryId: categoryId, // Changed from category to categoryId
         date: date,
         createdAt: createdAt,
         updatedAt: updatedAt,

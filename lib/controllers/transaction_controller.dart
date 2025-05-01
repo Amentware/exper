@@ -99,29 +99,10 @@ class TransactionController extends GetxController {
         return;
       }
 
-      // First, check if there are any transactions for this user at all (no date filtering)
-      var allTransactionsQuery = _firestore
-          .collection('transactions')
-          .where('user_id', isEqualTo: userId);
-
-      var allTransactionsSnapshot = await allTransactionsQuery.get();
-
-      if (allTransactionsSnapshot.docs.isEmpty) {
-        transactions.clear();
-        filteredTransactions.clear();
-        // Explicitly reset statistics when no transactions exist
-        totalIncome.value = 0.0;
-        totalExpense.value = 0.0;
-        balance.value = 0.0;
-        isLoading.value = false;
-        update();
-        return;
-      }
-
-      List<QueryDocumentSnapshot> transactionDocs = [];
-
+      // Create an optimized query with proper filtering
       try {
-        // Try with date filtering - requires Firebase index
+        // This query requires a composite index on Firestore:
+        // Collection: transactions, Fields: user_id (Ascending), date (Descending)
         var query = _firestore
             .collection('transactions')
             .where('user_id', isEqualTo: userId)
@@ -131,60 +112,95 @@ class TransactionController extends GetxController {
                 isLessThanOrEqualTo: Timestamp.fromDate(endDate.value))
             .orderBy('date', descending: true);
 
-        final querySnapshot = await query.get();
-        transactionDocs = querySnapshot.docs;
+        // Use cache when available for better performance
+        final querySnapshot =
+            await query.get(GetOptions(source: Source.serverAndCache));
+
+        if (querySnapshot.docs.isEmpty) {
+          transactions.clear();
+          filteredTransactions.clear();
+          // Explicitly reset statistics when no transactions exist
+          totalIncome.value = 0.0;
+          totalExpense.value = 0.0;
+          balance.value = 0.0;
+          isLoading.value = false;
+          update();
+          return;
+        }
+
+        final transactionList = querySnapshot.docs
+            .map((doc) {
+              try {
+                final data = doc.data() as Map<String, dynamic>;
+                return models.Transaction.fromMap(data, doc.id);
+              } catch (e) {
+                print('Error parsing transaction: $e');
+                return null;
+              }
+            })
+            .whereType<models.Transaction>()
+            .toList();
+
+        transactions.clear();
+        transactions.addAll(transactionList);
+
+        // Apply filters to set initial filteredTransactions
+        applyFilters();
+
+        // Calculate statistics
+        calculateStatistics();
       } catch (e) {
-        // Check if this is an index error
+        // If there's an index error, fall back to a simpler query with client-side filtering
         if (e.toString().contains('requires an index')) {
-          // Use client-side filtering as fallback when index is missing
-          transactionDocs = allTransactionsSnapshot.docs.where((doc) {
+          print('Index error: $e');
+          print('Falling back to simpler query with client-side filtering');
+
+          // Simpler query without complex filtering
+          var simpleQuery = _firestore
+              .collection('transactions')
+              .where('user_id', isEqualTo: userId)
+              .orderBy('date', descending: true);
+
+          final querySnapshot = await simpleQuery.get();
+
+          // Client-side date filtering
+          final filteredDocs = querySnapshot.docs.where((doc) {
             final data = doc.data() as Map<String, dynamic>;
             if (data.containsKey('date') && data['date'] is Timestamp) {
               final docDate = (data['date'] as Timestamp).toDate();
-              return docDate
-                      .isAfter(startDate.value.subtract(Duration(days: 1))) &&
-                  docDate.isBefore(endDate.value.add(Duration(days: 1)));
+              return docDate.isAfter(
+                      startDate.value.subtract(const Duration(days: 1))) &&
+                  docDate.isBefore(endDate.value.add(const Duration(days: 1)));
             }
             return false;
           }).toList();
 
-          // Sort manually since we can't use orderBy
-          transactionDocs.sort((a, b) {
-            final aData = a.data() as Map<String, dynamic>;
-            final bData = b.data() as Map<String, dynamic>;
-            final aTimestamp = aData['date'] as Timestamp;
-            final bTimestamp = bData['date'] as Timestamp;
+          final transactionList = filteredDocs
+              .map((doc) {
+                try {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return models.Transaction.fromMap(data, doc.id);
+                } catch (e) {
+                  print('Error parsing transaction: $e');
+                  return null;
+                }
+              })
+              .whereType<models.Transaction>()
+              .toList();
 
-            // Compare using milliseconds since epoch to include both date and time
-            return bTimestamp.millisecondsSinceEpoch
-                .compareTo(aTimestamp.millisecondsSinceEpoch);
-          });
+          transactions.clear();
+          transactions.addAll(transactionList);
+
+          // Apply filters to set initial filteredTransactions
+          applyFilters();
+
+          // Calculate statistics
+          calculateStatistics();
         } else {
           // For other errors, rethrow
           throw e;
         }
       }
-
-      final transactionList = transactionDocs
-          .map((doc) {
-            try {
-              final data = doc.data() as Map<String, dynamic>;
-              return models.Transaction.fromMap(data, doc.id);
-            } catch (e) {
-              return null;
-            }
-          })
-          .whereType<models.Transaction>()
-          .toList();
-
-      transactions.clear();
-      transactions.addAll(transactionList);
-
-      // Apply filters to set initial filteredTransactions
-      applyFilters();
-
-      // Calculate statistics
-      calculateStatistics();
     } catch (e) {
       // Keep this for error handling
       print('ERROR FETCHING TRANSACTIONS: $e');
@@ -206,13 +222,13 @@ class TransactionController extends GetxController {
       var filtered = transactions.where((transaction) {
         // Apply category filter
         if (selectedCategory.value != 'All Categories' &&
-            transaction.category != selectedCategory.value) {
+            transaction.categoryId != selectedCategory.value) {
           return false;
         }
 
         // Apply type filter based on category type
         if (selectedType.value != 'All Types') {
-          bool isIncome = _isIncomeCategory(transaction.category);
+          bool isIncome = _isIncomeCategory(transaction.categoryId);
 
           if (selectedType.value == 'Income' && !isIncome) {
             return false;
@@ -226,11 +242,14 @@ class TransactionController extends GetxController {
           final searchTerm = searchController.text.toLowerCase();
           // Safely handle null or empty fields with null-aware operators
           final description = transaction.description?.toLowerCase() ?? '';
-          final category = transaction.category?.toLowerCase() ?? '';
+          final category = transaction.categoryId?.toLowerCase() ?? '';
+          final categoryName =
+              getCategoryNameById(transaction.categoryId).toLowerCase();
 
           // Check if search term appears in description or category
           return description.contains(searchTerm) ||
-              category.contains(searchTerm);
+              category.contains(searchTerm) ||
+              categoryName.contains(searchTerm);
         }
 
         return true;
@@ -348,27 +367,20 @@ class TransactionController extends GetxController {
 
   Future<void> addTransaction(models.Transaction transaction) async {
     try {
-      // Convert the transaction to a map but explicitly use category_id field for compatibility
-      Map<String, dynamic> transactionData = transaction.toMap();
+      isLoading.value = true;
 
-      // Store the category value in both fields for backward compatibility
-      transactionData['category_id'] = transaction.category;
+      final docRef =
+          await _firestore.collection('transactions').add(transaction.toMap());
 
-      await _firestore.collection('transactions').add(transactionData);
+      print('Transaction added successfully with ID: ${docRef.id}');
 
-      // Ensure the transactions list is refreshed completely
+      // Reload transactions to update UI
       await fetchTransactions();
-
-      // Apply filters to update filtered transactions
-      applyFilters();
-
-      // Calculate statistics
-      calculateStatistics();
-
-      // Force update to ensure UI reflects changes
-      update();
     } catch (e) {
       print('Error adding transaction: $e');
+      throw e;
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -403,54 +415,43 @@ class TransactionController extends GetxController {
   }
 
   // Helper method to determine if a category is an income category
-  bool _isIncomeCategory(String categoryName) {
-    // First check the category controller
-    final categoryMatches = _categoryController.categories.where((category) =>
-        category.name.trim().toLowerCase() ==
-        categoryName.trim().toLowerCase());
-
-    if (categoryMatches.isNotEmpty) {
-      return categoryMatches.first.type == 'income';
+  bool _isIncomeCategory(String categoryId) {
+    try {
+      // Check the category type using the category controller
+      return _categoryController.getCategoryById(categoryId)?.type == 'income';
+    } catch (e) {
+      // Default to false (expense) if there's an error
+      return false;
     }
-
-    // Fallback heuristic for salary and income categories
-    final lowerName = categoryName.trim().toLowerCase();
-    final incomeKeywords = [
-      'income',
-      'salary',
-      'revenue',
-      'wage',
-      'earnings',
-      'stipend',
-      'bonus'
-    ];
-    return incomeKeywords.any((keyword) => lowerName.contains(keyword));
   }
 
   // Calculate income, expense, and balance
   void calculateStatistics() {
-    double income = 0.0;
-    double expense = 0.0;
+    try {
+      double income = 0.0;
+      double expense = 0.0;
 
-    // Only calculate if there are transactions
-    if (transactions.isNotEmpty) {
-      for (var transaction in transactions) {
-        if (_isIncomeCategory(transaction.category)) {
+      for (var transaction in filteredTransactions) {
+        final categoryType = getCategoryTypeById(transaction.categoryId);
+
+        if (categoryType == 'income') {
           income += transaction.amount;
         } else {
           expense += transaction.amount;
         }
       }
-    }
 
-    totalIncome.value = income;
-    totalExpense.value = expense;
-    balance.value = income - expense;
+      totalIncome.value = income;
+      totalExpense.value = expense;
+      balance.value = income - expense;
+    } catch (e) {
+      print('Error calculating statistics: $e');
+    }
   }
 
   // Get transactions by category
   List<models.Transaction> getTransactionsByCategory(String categoryName) {
-    return transactions.where((t) => t.category == categoryName).toList();
+    return transactions.where((t) => t.categoryId == categoryName).toList();
   }
 
   // Get transactions for a specific date
@@ -492,7 +493,7 @@ class TransactionController extends GetxController {
   Future<void> createTransaction({
     required String description,
     required double amount,
-    required String category,
+    required String categoryId,
     required DateTime date,
   }) async {
     try {
@@ -505,7 +506,7 @@ class TransactionController extends GetxController {
         userId: userId,
         description: description,
         amount: amount,
-        category: category,
+        categoryId: categoryId,
         date: date,
         createdAt: now,
         updatedAt: now,
@@ -531,7 +532,7 @@ class TransactionController extends GetxController {
           userId: transaction.userId,
           description: '${transaction.description} (Copy)',
           amount: transaction.amount,
-          category: transaction.category,
+          categoryId: transaction.categoryId,
           date: now,
           createdAt: now,
           updatedAt: now,
@@ -551,14 +552,62 @@ class TransactionController extends GetxController {
     final Map<String, double> summary = {};
 
     for (var transaction in filteredTransactions) {
-      if (summary.containsKey(transaction.category)) {
-        summary[transaction.category] =
-            summary[transaction.category]! + transaction.amount;
+      if (summary.containsKey(transaction.categoryId)) {
+        summary[transaction.categoryId] =
+            summary[transaction.categoryId]! + transaction.amount;
       } else {
-        summary[transaction.category] = transaction.amount;
+        summary[transaction.categoryId] = transaction.amount;
       }
     }
 
     return summary;
+  }
+
+  // Helper method to get category name from ID
+  String getCategoryNameById(String categoryId) {
+    try {
+      final category = _categoryController.getCategoryById(categoryId);
+      return category?.name ?? 'Unknown';
+    } catch (e) {
+      print('Error getting category name: $e');
+      return 'Unknown';
+    }
+  }
+
+  // Helper method to get category type from ID
+  String getCategoryTypeById(String categoryId) {
+    try {
+      final category = _categoryController.getCategoryById(categoryId);
+      if (category != null) {
+        return category.type;
+      }
+
+      // Default to expense if category not found
+      return 'expense';
+    } catch (e) {
+      print('Error getting category type: $e');
+      return 'expense';
+    }
+  }
+
+  // Clear cache for transactions (for data refresh)
+  Future<void> clearTransactionsCache() async {
+    try {
+      final userId = _authController.user.value?.uid;
+      if (userId == null) return;
+
+      isLoading.value = true;
+      update();
+
+      // Fetch fresh data from server
+      await fetchTransactions();
+
+      print('Transactions cache cleared and refreshed');
+    } catch (e) {
+      print('Error clearing transactions cache: $e');
+    } finally {
+      isLoading.value = false;
+      update();
+    }
   }
 }

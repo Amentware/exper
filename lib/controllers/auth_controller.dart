@@ -19,6 +19,7 @@ class AuthController extends GetxController {
     user.bindStream(_auth.authStateChanges());
     ever(user, (_) {
       if (user.value != null) {
+        // Load user profile
         Get.find<ProfileController>().fetchUserProfile();
       }
     });
@@ -64,9 +65,14 @@ class AuthController extends GetxController {
           .doc(cred.user!.uid)
           .set(profileData);
 
-      // Create default categories using CategoryController
+      // Create default categories explicitly for the new user
       final categoryController = Get.find<CategoryController>();
-      // Directly fetch categories which will create defaults if none exist
+      await categoryController.createDefaultCategories(cred.user!.uid);
+
+      // Delay slightly to ensure categories are properly loaded
+      //await Future.delayed(Duration(milliseconds: 500));
+
+      // Fetch categories again to make sure they're loaded in memory
       await categoryController.fetchCategories();
 
       isLoading.value = false;
@@ -101,7 +107,6 @@ class AuthController extends GetxController {
       isLoading.value = true;
       await _auth.signInWithEmailAndPassword(email: email, password: password);
       isLoading.value = false;
-
       Get.offAll(HomeScreen());
     } catch (e) {
       isLoading.value = false;

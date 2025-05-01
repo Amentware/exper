@@ -59,21 +59,38 @@ class BudgetController extends GetxController {
         return;
       }
 
+      // This query requires a composite index on Firestore:
+      // Collection: budgets, Fields: user_id (Ascending), month (Ascending), year (Ascending)
       final querySnapshot = await _firestore
           .collection('budgets')
           .where('user_id', isEqualTo: userId)
           .where('month', isEqualTo: selectedMonth.value)
           .where('year', isEqualTo: selectedYear.value)
-          .get();
+          .get(GetOptions(
+              source: Source.serverAndCache)); // Use cache when available
 
       final budgetList = querySnapshot.docs
-          .map((doc) => Budget.fromMap(doc.data(), doc.id))
+          .map((doc) {
+            try {
+              return Budget.fromMap(doc.data(), doc.id);
+            } catch (e) {
+              print('Error parsing budget ${doc.id}: $e');
+              return null;
+            }
+          })
+          .whereType<Budget>() // Filter out nulls
           .toList();
 
       budgets.clear();
       budgets.addAll(budgetList);
     } catch (e) {
       print('Error fetching budgets: $e');
+      // If there's an index error, suggest creating an index
+      if (e.toString().contains('requires an index')) {
+        print('Index error: Please create a composite index on Firestore:');
+        print(
+            'Collection: budgets, Fields: user_id (Ascending), month (Ascending), year (Ascending)');
+      }
     } finally {
       isLoading.value = false;
     }
@@ -86,18 +103,18 @@ class BudgetController extends GetxController {
     await fetchBudgets();
   }
 
-  // Add or update a budget
-  Future<void> setBudget(String category, double amount) async {
+  // Add or update a budget using categoryId
+  Future<void> setBudget(String categoryId, double amount) async {
     try {
       isLoading.value = true;
       final userId = _authController.user.value?.uid;
       if (userId == null) return;
 
-      // Check if budget already exists for this category, month, and year
+      // Check if budget already exists for this category ID, month, and year
       final existingBudgetQuery = await _firestore
           .collection('budgets')
           .where('user_id', isEqualTo: userId)
-          .where('category', isEqualTo: category)
+          .where('category_id', isEqualTo: categoryId)
           .where('month', isEqualTo: selectedMonth.value)
           .where('year', isEqualTo: selectedYear.value)
           .get();
@@ -116,7 +133,7 @@ class BudgetController extends GetxController {
         final budget = Budget(
           id: '',
           userId: userId,
-          category: category,
+          categoryId: categoryId,
           amount: amount,
           month: selectedMonth.value,
           year: selectedYear.value,
@@ -130,9 +147,16 @@ class BudgetController extends GetxController {
       // Refresh budgets
       await fetchBudgets();
 
+      // Get category name for snackbar message
+      String categoryName = 'Unknown';
+      final category = _categoryController.getCategoryById(categoryId);
+      if (category != null) {
+        categoryName = category.name;
+      }
+
       Get.snackbar(
         'Budget Updated',
-        'Budget for $category has been set',
+        'Budget for $categoryName has been set',
         colorText: Colors.white,
         backgroundColor: Colors.black,
         snackPosition: SnackPosition.TOP,
@@ -204,8 +228,8 @@ class BudgetController extends GetxController {
     for (var budget in budgets) {
       final categoryTransactions = transactions
           .where((tx) =>
-              tx.category == budget.category &&
-              _categoryController.getCategoryType(tx.category) == 'expense')
+              tx.categoryId == budget.categoryId &&
+              _categoryController.getCategoryType(tx.categoryId) == 'expense')
           .toList();
 
       spent += categoryTransactions.fold(0.0, (sum, tx) => sum + tx.amount);
@@ -226,54 +250,147 @@ class BudgetController extends GetxController {
   }
 
   // Get category-specific spent amount
-  double getCategorySpent(String category) {
+  double getCategorySpent(String categoryId) {
     // Get transactions for the specific category in the current month/year
     final transactions = _transactionController.transactions
         .where((tx) =>
-            tx.category == category &&
+            tx.categoryId == categoryId &&
             tx.date.month == selectedMonth.value &&
             tx.date.year == selectedYear.value &&
-            _categoryController.getCategoryType(category) == 'expense')
+            _categoryController.getCategoryType(categoryId) == 'expense')
         .toList();
 
     return transactions.fold(0.0, (sum, tx) => sum + tx.amount);
   }
 
-  // Get budget for a specific category
-  Budget? getBudgetForCategory(String category) {
+  // Get budget for a specific category by ID
+  Budget? getBudgetForCategoryId(String categoryId) {
     try {
-      return budgets.firstWhere((budget) => budget.category == category);
+      return budgets.firstWhere((budget) => budget.categoryId == categoryId);
     } catch (e) {
       return null;
     }
   }
 
-  // Get list of categories with budget progress
-  List<Map<String, dynamic>> getCategoryBudgetProgress() {
-    final result = <Map<String, dynamic>>[];
+  // Get budget for a specific category by name (helper method for backwards compatibility)
+  Budget? getBudgetForCategory(String categoryName) {
+    try {
+      // Find the category ID for the given name
+      final category = _categoryController.getCategoryByName(categoryName);
+      if (category == null) return null;
 
-    for (var budget in budgets) {
-      final spent = getCategorySpent(budget.category);
-      final progress = budget.amount > 0 ? (spent / budget.amount) : 0.0;
-
-      result.add({
-        'category': budget.category,
-        'budget': budget.amount,
-        'spent': spent,
-        'remaining': budget.amount - spent,
-        'progress': progress,
-      });
+      // Get budget for the category ID
+      return getBudgetForCategoryId(category.id);
+    } catch (e) {
+      return null;
     }
-
-    // Sort by highest percentage used
-    result.sort((a, b) => b['progress'].compareTo(a['progress']));
-
-    return result;
   }
 
-  // Get top budget categories by usage percentage
+  // Get top budget categories with spending data
   List<Map<String, dynamic>> getTopBudgetCategories({int limit = 3}) {
-    final progress = getCategoryBudgetProgress();
-    return progress.take(limit).toList();
+    try {
+      final result = <Map<String, dynamic>>[];
+
+      // For each budget
+      for (var budget in budgets) {
+        // Find the category for this budget
+        final category = _categoryController.getCategoryById(budget.categoryId);
+        final categoryName = category?.name ?? 'Unknown';
+
+        // Check if we have transactions for this month
+        final now = DateTime.now();
+        final monthStart = DateTime(selectedYear.value, selectedMonth.value, 1);
+        final monthEnd =
+            DateTime(selectedYear.value, selectedMonth.value + 1, 0);
+
+        // Calculate spent for this category
+        double spent = 0.0;
+        for (var transaction in _transactionController.transactions) {
+          // Match by category ID and ensure transaction is in this month
+          if (transaction.categoryId == budget.categoryId &&
+              transaction.date
+                  .isAfter(monthStart.subtract(Duration(days: 1))) &&
+              transaction.date.isBefore(monthEnd.add(Duration(days: 1)))) {
+            spent += transaction.amount;
+          }
+        }
+
+        // Calculate progress percentage
+        final progress = spent / budget.amount;
+
+        // Add to result
+        result.add({
+          'category': categoryName,
+          'spent': spent,
+          'budget': budget.amount,
+          'progress': progress,
+        });
+      }
+
+      // Sort by progress (highest first)
+      result.sort((a, b) =>
+          (b['progress'] as double).compareTo(a['progress'] as double));
+
+      // Take top X results
+      return result.take(limit).toList();
+    } catch (e) {
+      print('Error getting top budget categories: $e');
+      return [];
+    }
+  }
+
+  // Get budget progress data for all categories
+  List<Map<String, dynamic>> getCategoryBudgetProgress() {
+    try {
+      final result = <Map<String, dynamic>>[];
+
+      // For each budget
+      for (var budget in budgets) {
+        // Find the category for this budget
+        final category = _categoryController.getCategoryById(budget.categoryId);
+        final categoryName = category?.name ?? 'Unknown';
+
+        // Calculate spent for this category
+        double spent = 0.0;
+        for (var transaction in _transactionController.transactions) {
+          if (transaction.categoryId == budget.categoryId &&
+              transaction.date.month == selectedMonth.value &&
+              transaction.date.year == selectedYear.value) {
+            spent += transaction.amount;
+          }
+        }
+
+        // Calculate progress
+        final progress = spent / budget.amount;
+
+        // Add to result
+        result.add({
+          'category': categoryName,
+          'spent': spent,
+          'budget': budget.amount,
+          'progress': progress,
+        });
+      }
+
+      // Sort by progress (highest first)
+      result.sort((a, b) =>
+          (b['progress'] as double).compareTo(a['progress'] as double));
+
+      return result;
+    } catch (e) {
+      print('Error getting category budget progress: $e');
+      return [];
+    }
+  }
+
+  // Get a category ID from its name
+  String getCategoryIdForName(String categoryName) {
+    try {
+      final category = _categoryController.getCategoryByName(categoryName);
+      return category?.id ?? '';
+    } catch (e) {
+      print('Error getting category ID for name: $e');
+      return '';
+    }
   }
 }
