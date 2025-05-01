@@ -11,7 +11,33 @@ class ForgetPassword extends StatelessWidget {
 
   void forgetPasswordFunction() async {
     FocusManager.instance.primaryFocus?.unfocus();
-    await authController.forgetPassword(_emailController.text);
+
+    // Form validation
+    if (_emailController.text.trim().isEmpty) {
+      Get.snackbar(
+        "Validation Error",
+        "Please enter your email",
+        backgroundColor: Colors.black,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(10),
+      );
+      return;
+    }
+
+    if (!GetUtils.isEmail(_emailController.text.trim())) {
+      Get.snackbar(
+        "Validation Error",
+        "Please enter a valid email address",
+        backgroundColor: Colors.black,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(10),
+      );
+      return;
+    }
+
+    await authController.forgetPassword(_emailController.text.trim());
   }
 
   @override
@@ -64,30 +90,28 @@ class ForgetPassword extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Material(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(5),
-                      child: InkWell(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(5),
-                        onTap: () {
+                      ),
+                      child: TextButton(
+                        onPressed: () {
                           Get.back();
                         },
-                        child: Container(
-                          alignment: Alignment.center,
+                        style: TextButton.styleFrom(
                           padding: const EdgeInsets.all(15),
-                          decoration: const ShapeDecoration(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(50),
-                              ),
-                            ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5),
                           ),
-                          child: const Text(
-                            'Back',
-                            style: TextStyle(
-                              color: black,
-                              fontWeight: FontWeight.w900,
-                            ),
+                          splashFactory: NoSplash.splashFactory,
+                          backgroundColor: Colors.white,
+                        ),
+                        child: const Text(
+                          'Back',
+                          style: TextStyle(
+                            color: black,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
                       ),

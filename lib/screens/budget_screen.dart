@@ -25,7 +25,7 @@ class BudgetScreen extends StatelessWidget {
           const Text(
             'Budgets',
             style: TextStyle(
-              fontSize: 32,
+              fontSize: 28,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -66,8 +66,10 @@ class BudgetScreen extends StatelessWidget {
                       Get.snackbar(
                         'Coming Soon',
                         'Budget feature is under development',
-                        colorText: Colors.black,
-                        backgroundColor: Colors.white,
+                        colorText: Colors.white,
+                        backgroundColor: Colors.black,
+                        snackPosition: SnackPosition.TOP,
+                        margin: const EdgeInsets.all(10),
                       );
                     },
                     style: OutlinedButton.styleFrom(

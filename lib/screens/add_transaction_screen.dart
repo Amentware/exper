@@ -64,8 +64,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       Get.snackbar(
         'Error',
         'Please fill all required fields',
-        colorText: Colors.black,
-        backgroundColor: Colors.white,
+        colorText: Colors.white,
+        backgroundColor: Colors.black,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(10),
       );
       return;
     }
@@ -105,11 +107,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       await transactionController.addTransaction(transaction);
 
       Get.back(result: true); // Success
+
+      // Format the amount with currency symbol
+      final formattedAmount =
+          profileController.currency + amountController.text;
+      final transactionType = isExpense.value ? 'Expense' : 'Income';
+
       Get.snackbar(
-        'Success',
-        'Transaction added successfully',
-        colorText: Colors.black,
-        backgroundColor: Colors.white,
+        'Transaction Added',
+        '$transactionType of $formattedAmount added to ${selectedCategory.value}',
+        colorText: Colors.white,
+        backgroundColor: Colors.black,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(10),
       );
     } catch (e) {
       print('Error saving transaction: $e');
@@ -117,8 +127,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       Get.snackbar(
         'Error',
         'Failed to save transaction',
-        colorText: Colors.black,
-        backgroundColor: Colors.white,
+        colorText: Colors.white,
+        backgroundColor: Colors.black,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(10),
       );
     } finally {
       isLoading.value = false;

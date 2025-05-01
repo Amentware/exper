@@ -87,8 +87,10 @@ class AuthController extends GetxController {
       Get.snackbar(
         "Sign Up Error",
         errorMessage,
-        colorText: Colors.black,
-        backgroundColor: Colors.white,
+        colorText: Colors.white,
+        backgroundColor: Colors.black,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(10),
       );
     }
   }
@@ -117,8 +119,10 @@ class AuthController extends GetxController {
       Get.snackbar(
         "Login Error",
         errorMessage,
-        colorText: Colors.black,
-        backgroundColor: Colors.white,
+        colorText: Colors.white,
+        backgroundColor: Colors.black,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(10),
       );
     }
   }
@@ -138,16 +142,20 @@ class AuthController extends GetxController {
       Get.snackbar(
         "Reset Mail Sent",
         "A password reset link has been sent to your email.",
-        colorText: Colors.black,
-        backgroundColor: Colors.white,
+        colorText: Colors.white,
+        backgroundColor: Colors.black,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(10),
       );
     } catch (e) {
       isLoading.value = false;
       Get.snackbar(
         "Reset Mail Error",
         e.toString(),
-        colorText: Colors.black,
-        backgroundColor: Colors.white,
+        colorText: Colors.white,
+        backgroundColor: Colors.black,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(10),
       );
     }
   }

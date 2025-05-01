@@ -118,6 +118,8 @@ class SettingsScreen extends StatelessWidget {
                       'Profile editing will be available soon',
                       colorText: Colors.black,
                       backgroundColor: Colors.white,
+                      snackPosition: SnackPosition.TOP,
+                      margin: const EdgeInsets.all(10),
                     );
                   },
                   icon: const Icon(Icons.edit_outlined),
@@ -168,8 +170,10 @@ class SettingsScreen extends StatelessWidget {
                   Get.snackbar(
                     'Coming Soon',
                     'Currency selection will be available soon',
-                    colorText: Colors.black,
-                    backgroundColor: Colors.white,
+                    colorText: Colors.white,
+                    backgroundColor: Colors.black,
+                    snackPosition: SnackPosition.TOP,
+                    margin: const EdgeInsets.all(10),
                   );
                 },
               )),
@@ -186,8 +190,10 @@ class SettingsScreen extends StatelessWidget {
                   Get.snackbar(
                     'Coming Soon',
                     'Theme selection will be available soon',
-                    colorText: Colors.black,
-                    backgroundColor: Colors.white,
+                    colorText: Colors.white,
+                    backgroundColor: Colors.black,
+                    snackPosition: SnackPosition.TOP,
+                    margin: const EdgeInsets.all(10),
                   );
                 },
               )),
@@ -204,8 +210,10 @@ class SettingsScreen extends StatelessWidget {
                   Get.snackbar(
                     'Coming Soon',
                     'Notification settings will be available soon',
-                    colorText: Colors.black,
-                    backgroundColor: Colors.white,
+                    colorText: Colors.white,
+                    backgroundColor: Colors.black,
+                    snackPosition: SnackPosition.TOP,
+                    margin: const EdgeInsets.all(10),
                   );
                 },
               )),
@@ -222,8 +230,10 @@ class SettingsScreen extends StatelessWidget {
               Get.snackbar(
                 'Coming Soon',
                 'Language selection will be available soon',
-                colorText: Colors.black,
-                backgroundColor: Colors.white,
+                colorText: Colors.white,
+                backgroundColor: Colors.black,
+                snackPosition: SnackPosition.TOP,
+                margin: const EdgeInsets.all(10),
               );
             },
           ),
@@ -312,6 +322,8 @@ class SettingsScreen extends StatelessWidget {
                 'Password change will be available soon',
                 colorText: Colors.black,
                 backgroundColor: Colors.white,
+                snackPosition: SnackPosition.TOP,
+                margin: const EdgeInsets.all(10),
               );
             },
           ),
@@ -329,6 +341,8 @@ class SettingsScreen extends StatelessWidget {
                 'Data export will be available soon',
                 colorText: Colors.black,
                 backgroundColor: Colors.white,
+                snackPosition: SnackPosition.TOP,
+                margin: const EdgeInsets.all(10),
               );
             },
           ),

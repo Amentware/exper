@@ -47,7 +47,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
           const Text(
             'Transactions',
             style: TextStyle(
-              fontSize: 32,
+              fontSize: 28,
               fontWeight: FontWeight.bold,
             ),
           ),

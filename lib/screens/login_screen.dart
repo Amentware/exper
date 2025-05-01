@@ -17,8 +17,46 @@ class LoginPage extends StatelessWidget {
     void loginFunction() async {
       FocusManager.instance.primaryFocus?.unfocus();
 
+      // Form validation
+      if (emailController.text.trim().isEmpty) {
+        Get.snackbar(
+          "Validation Error",
+          "Please enter your email",
+          backgroundColor: Colors.black,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          margin: const EdgeInsets.all(10),
+        );
+        return;
+      }
+
+      if (!GetUtils.isEmail(emailController.text.trim())) {
+        Get.snackbar(
+          "Validation Error",
+          "Please enter a valid email address",
+          backgroundColor: Colors.black,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          margin: const EdgeInsets.all(10),
+        );
+        return;
+      }
+
+      if (passwordController.text.isEmpty) {
+        Get.snackbar(
+          "Validation Error",
+          "Please enter your password",
+          backgroundColor: Colors.black,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          margin: const EdgeInsets.all(10),
+        );
+        return;
+      }
+
       // Show loading spinner while waiting for login response
-      await authController.login(emailController.text, passwordController.text);
+      await authController.login(
+          emailController.text.trim(), passwordController.text);
     }
 
     return Scaffold(

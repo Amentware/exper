@@ -152,8 +152,10 @@ class CategoryController extends GetxController {
         Get.snackbar(
           'Error',
           'A category with this name already exists',
-          colorText: Colors.black,
-          backgroundColor: Colors.white,
+          colorText: Colors.white,
+          backgroundColor: Colors.black,
+          snackPosition: SnackPosition.TOP,
+          margin: const EdgeInsets.all(10),
         );
         isLoading.value = false;
         return;
@@ -186,16 +188,20 @@ class CategoryController extends GetxController {
       Get.snackbar(
         'Success',
         'Category added successfully',
-        colorText: Colors.black,
-        backgroundColor: Colors.white,
+        colorText: Colors.white,
+        backgroundColor: Colors.black,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(10),
       );
     } catch (e) {
       print('Error adding category: $e');
       Get.snackbar(
         'Error',
         'Failed to add category',
-        colorText: Colors.black,
-        backgroundColor: Colors.white,
+        colorText: Colors.white,
+        backgroundColor: Colors.black,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(10),
       );
     } finally {
       isLoading.value = false;
@@ -216,8 +222,10 @@ class CategoryController extends GetxController {
           Get.snackbar(
             'Error',
             'A category with this name already exists',
-            colorText: Colors.black,
-            backgroundColor: Colors.white,
+            colorText: Colors.white,
+            backgroundColor: Colors.black,
+            snackPosition: SnackPosition.TOP,
+            margin: const EdgeInsets.all(10),
           );
           isLoading.value = false;
           return;
@@ -234,16 +242,20 @@ class CategoryController extends GetxController {
       Get.snackbar(
         'Success',
         'Category updated successfully',
-        colorText: Colors.black,
-        backgroundColor: Colors.white,
+        colorText: Colors.white,
+        backgroundColor: Colors.black,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(10),
       );
     } catch (e) {
       print('Error updating category: $e');
       Get.snackbar(
         'Error',
         'Failed to update category',
-        colorText: Colors.black,
-        backgroundColor: Colors.white,
+        colorText: Colors.white,
+        backgroundColor: Colors.black,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(10),
       );
     } finally {
       isLoading.value = false;
@@ -286,8 +298,10 @@ class CategoryController extends GetxController {
         Get.snackbar(
           'Error',
           'Cannot delete category that has transactions',
-          colorText: Colors.black,
-          backgroundColor: Colors.white,
+          colorText: Colors.white,
+          backgroundColor: Colors.black,
+          snackPosition: SnackPosition.TOP,
+          margin: const EdgeInsets.all(10),
         );
         isLoading.value = false;
         return;
@@ -299,16 +313,20 @@ class CategoryController extends GetxController {
       Get.snackbar(
         'Success',
         'Category deleted successfully',
-        colorText: Colors.black,
-        backgroundColor: Colors.white,
+        colorText: Colors.white,
+        backgroundColor: Colors.black,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(10),
       );
     } catch (e) {
       print('Error deleting category: $e');
       Get.snackbar(
         'Error',
         'Failed to delete category',
-        colorText: Colors.black,
-        backgroundColor: Colors.white,
+        colorText: Colors.white,
+        backgroundColor: Colors.black,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(10),
       );
     } finally {
       isLoading.value = false;

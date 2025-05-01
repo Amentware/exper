@@ -16,9 +16,71 @@ class SignUpPage extends StatelessWidget {
 
     void signUpFunction() async {
       FocusManager.instance.primaryFocus?.unfocus();
+
+      // Form validation
+      if (usernameController.text.trim().isEmpty) {
+        Get.snackbar(
+          "Validation Error",
+          "Please enter your name",
+          backgroundColor: Colors.black,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          margin: const EdgeInsets.all(10),
+        );
+        return;
+      }
+
+      if (emailController.text.trim().isEmpty) {
+        Get.snackbar(
+          "Validation Error",
+          "Please enter your email",
+          backgroundColor: Colors.black,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          margin: const EdgeInsets.all(10),
+        );
+        return;
+      }
+
+      if (!GetUtils.isEmail(emailController.text.trim())) {
+        Get.snackbar(
+          "Validation Error",
+          "Please enter a valid email address",
+          backgroundColor: Colors.black,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          margin: const EdgeInsets.all(10),
+        );
+        return;
+      }
+
+      if (passwordController.text.isEmpty) {
+        Get.snackbar(
+          "Validation Error",
+          "Please enter a password",
+          backgroundColor: Colors.black,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          margin: const EdgeInsets.all(10),
+        );
+        return;
+      }
+
+      if (passwordController.text.length < 6) {
+        Get.snackbar(
+          "Validation Error",
+          "Password must be at least 6 characters long",
+          backgroundColor: Colors.black,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          margin: const EdgeInsets.all(10),
+        );
+        return;
+      }
+
       await authController.signUp(
-        usernameController.text,
-        emailController.text,
+        usernameController.text.trim(),
+        emailController.text.trim(),
         passwordController.text,
       );
     }
