@@ -1176,18 +1176,11 @@ class DashboardScreen extends StatelessWidget {
   // Build top budget categories section
   Widget _buildTopBudgetCategories() {
     return Obx(() {
-      // Check if we have any budgets
-      if (budgetController.budgets.isEmpty) {
-        return const SizedBox.shrink(); // Don't display anything if no budgets
-      }
-
+      // Get budgets even if empty for display
       final formatter = NumberFormat('#,##0', 'en_IN');
       final topBudgets = budgetController.getTopBudgetCategories(limit: 3);
 
-      if (topBudgets.isEmpty) {
-        return const SizedBox.shrink();
-      }
-
+      // Container always shown, but with different content based on budget status
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -1214,7 +1207,7 @@ class DashboardScreen extends StatelessWidget {
                     Get.find<HomeController>().changeTab(2);
                   },
                   child: Text(
-                    'View All',
+                    'See All',
                     style: TextStyle(
                       color: black,
                       fontWeight: FontWeight.w500,
@@ -1226,65 +1219,81 @@ class DashboardScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Budget categories list
-            ...topBudgets.map((budget) {
-              final category = budget['category'] as String;
-              final spent = budget['spent'] as double;
-              final total = budget['budget'] as double;
-              final progress = budget['progress'] as double;
+            // Show empty state message if no budgets
+            topBudgets.isEmpty
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text(
+                        'No budget set yet',
+                        style: TextStyle(
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                  )
+                : Column(
+                    children: topBudgets.map((budget) {
+                      final category = budget['category'] as String;
+                      final spent = budget['spent'] as double;
+                      final total = budget['budget'] as double;
+                      final progress = budget['progress'] as double;
 
-              // Determine color based on progress
-              Color progressColor;
-              if (progress >= 1.0) {
-                progressColor = Colors.black; // Full black for over budget
-              } else if (progress >= 0.75) {
-                progressColor =
-                    Colors.grey.shade700; // Dark grey for approaching limit
-              } else {
-                progressColor =
-                    Colors.grey.shade500; // Medium grey for normal progress
-              }
+                      // Determine color based on progress
+                      Color progressColor;
+                      if (progress >= 1.0) {
+                        progressColor =
+                            Colors.black; // Full black for over budget
+                      } else if (progress >= 0.75) {
+                        progressColor = Colors
+                            .grey.shade700; // Dark grey for approaching limit
+                      } else {
+                        progressColor = Colors
+                            .grey.shade500; // Medium grey for normal progress
+                      }
 
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            category,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w500,
-                              fontSize: 15,
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    category,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 15,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Text(
+                                  '${profileController.currency}${formatter.format(spent)} / ${profileController.currency}${formatter.format(total)}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: progressColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
                             ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                            const SizedBox(height: 8),
+                            LinearProgressIndicator(
+                              value: progress > 1.0 ? 1.0 : progress,
+                              backgroundColor: Colors.grey[200],
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(progressColor),
+                              borderRadius: BorderRadius.circular(5),
+                              minHeight: 6,
+                            ),
+                          ],
                         ),
-                        Text(
-                          '${profileController.currency}${formatter.format(spent)} / ${profileController.currency}${formatter.format(total)}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: progressColor,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    LinearProgressIndicator(
-                      value: progress > 1.0 ? 1.0 : progress,
-                      backgroundColor: Colors.grey[200],
-                      valueColor: AlwaysStoppedAnimation<Color>(progressColor),
-                      borderRadius: BorderRadius.circular(5),
-                      minHeight: 6,
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
+                      );
+                    }).toList(),
+                  ),
           ],
         ),
       );
