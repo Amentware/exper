@@ -27,6 +27,17 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Ensure data is loaded when the dashboard is first displayed
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Check if date range needs to be updated
+      _checkAndUpdateDateRange();
+
+      // Force refresh categories and transactions when dashboard is shown
+      categoryController.fetchCategories().then((_) {
+        transactionController.fetchTransactions();
+      });
+    });
+
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
       child: Padding(
@@ -205,11 +216,13 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '${profileController.currency}${formatter.format(balance.abs())}',
+                  balance < 0
+                      ? '-${profileController.currency}${formatter.format(balance.abs())}'
+                      : '${profileController.currency}${formatter.format(balance)}',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: balance < 0 ? Colors.red : Colors.black,
                   ),
                 ),
               ],
@@ -881,13 +894,15 @@ class DashboardScreen extends StatelessWidget {
   Widget _buildRecentTransactions() {
     return Obx(() {
       final formatter = NumberFormat('#,##0', 'en_IN');
-      final recentTransactions = transactionController.transactions.isEmpty
+
+      // Sort transactions by date (most recent first)
+      final sortedTransactions = [...transactionController.transactions];
+      sortedTransactions.sort((a, b) => b.date.compareTo(a.date));
+
+      final recentTransactions = sortedTransactions.isEmpty
           ? []
-          : transactionController.transactions.sublist(
-              0,
-              transactionController.transactions.length > 5
-                  ? 5
-                  : transactionController.transactions.length);
+          : sortedTransactions.sublist(
+              0, sortedTransactions.length > 5 ? 5 : sortedTransactions.length);
 
       return Container(
         padding: const EdgeInsets.all(20),
@@ -1148,5 +1163,28 @@ class DashboardScreen extends StatelessWidget {
         ),
       );
     });
+  }
+
+  // Check if the current date is past the end date and update if needed
+  void _checkAndUpdateDateRange() {
+    final DateTime now = DateTime.now();
+
+    // Check if current date is past the end date
+    if (now.isAfter(profileController.endDate)) {
+      print(
+          'Current date is past the selected end date, updating to current month...');
+
+      // Get the first day of the current month
+      final DateTime firstDayOfMonth = DateTime(now.year, now.month, 1);
+
+      // Get the last day of the current month
+      final DateTime lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
+
+      // Update the date range
+      profileController.setDateRange(firstDayOfMonth, lastDayOfMonth).then((_) {
+        // Fetch transactions with the new date range
+        transactionController.fetchTransactions();
+      });
+    }
   }
 }

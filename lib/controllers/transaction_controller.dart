@@ -109,6 +109,10 @@ class TransactionController extends GetxController {
       if (allTransactionsSnapshot.docs.isEmpty) {
         transactions.clear();
         filteredTransactions.clear();
+        // Explicitly reset statistics when no transactions exist
+        totalIncome.value = 0.0;
+        totalExpense.value = 0.0;
+        balance.value = 0.0;
         isLoading.value = false;
         update();
         return;
@@ -184,6 +188,10 @@ class TransactionController extends GetxController {
     } catch (e) {
       // Keep this for error handling
       print('ERROR FETCHING TRANSACTIONS: $e');
+      // Reset statistics on error
+      totalIncome.value = 0.0;
+      totalExpense.value = 0.0;
+      balance.value = 0.0;
       update();
     } finally {
       isLoading.value = false;
@@ -347,7 +355,18 @@ class TransactionController extends GetxController {
       transactionData['category_id'] = transaction.category;
 
       await _firestore.collection('transactions').add(transactionData);
+
+      // Ensure the transactions list is refreshed completely
       await fetchTransactions();
+
+      // Apply filters to update filtered transactions
+      applyFilters();
+
+      // Calculate statistics
+      calculateStatistics();
+
+      // Force update to ensure UI reflects changes
+      update();
     } catch (e) {
       print('Error adding transaction: $e');
     }
@@ -370,6 +389,14 @@ class TransactionController extends GetxController {
     try {
       await _firestore.collection('transactions').doc(id).delete();
       await fetchTransactions();
+
+      // Check if there are no more transactions and reset statistics
+      if (transactions.isEmpty) {
+        totalIncome.value = 0.0;
+        totalExpense.value = 0.0;
+        balance.value = 0.0;
+        update();
+      }
     } catch (e) {
       print('Error deleting transaction: $e');
     }
@@ -405,11 +432,14 @@ class TransactionController extends GetxController {
     double income = 0.0;
     double expense = 0.0;
 
-    for (var transaction in transactions) {
-      if (_isIncomeCategory(transaction.category)) {
-        income += transaction.amount;
-      } else {
-        expense += transaction.amount;
+    // Only calculate if there are transactions
+    if (transactions.isNotEmpty) {
+      for (var transaction in transactions) {
+        if (_isIncomeCategory(transaction.category)) {
+          income += transaction.amount;
+        } else {
+          expense += transaction.amount;
+        }
       }
     }
 

@@ -83,7 +83,13 @@ class _TransactionScreenState extends State<TransactionScreen> {
                 transition: Transition.rightToLeft)
             ?.then((result) {
           if (result == true) {
-            transactionController.fetchTransactions();
+            // Fetch transactions again and rebuild the UI
+            transactionController.fetchTransactions().then((_) {
+              // Ensure the UI updates by forcing a rebuild
+              if (mounted) {
+                setState(() {});
+              }
+            });
           }
         });
       },
@@ -115,7 +121,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
 
   Widget _buildSearchBar() {
     return Container(
-      height: 40, // Set fixed height to match other elements
+      height:
+          48, // Increased height for better touch targets on smaller screens
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
@@ -136,7 +143,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
                 hintText: 'Search transactions...',
                 border: InputBorder.none,
                 isDense: true,
-                contentPadding: EdgeInsets.symmetric(vertical: 10),
+                contentPadding: EdgeInsets.symmetric(
+                    vertical: 14), // Increased padding for better alignment
               ),
               style: const TextStyle(
                 fontSize: 16,
@@ -517,7 +525,6 @@ class _TransactionScreenState extends State<TransactionScreen> {
                 ),
               );
             }
-
             return ListView.builder(
               itemCount: sortedDates.length,
               itemBuilder: (context, dateIndex) {
@@ -655,9 +662,22 @@ class _TransactionScreenState extends State<TransactionScreen> {
       confirmDismiss: (direction) async {
         return await _showDeleteConfirmationDialog();
       },
-      onDismissed: (direction) {
-        transactionController.deleteTransaction(transaction.id);
-        setState(() {}); // Force rebuild
+      onDismissed: (direction) async {
+        // First remove the transaction from the local list
+        final index = transactionController.filteredTransactions
+            .indexWhere((t) => t.id == transaction.id);
+        if (index != -1) {
+          // Remove from local list immediately to prevent the dismissed widget error
+          transactionController.filteredTransactions.removeAt(index);
+        }
+
+        // Then delete from the database
+        await transactionController.deleteTransaction(transaction.id);
+
+        // Force rebuild
+        if (mounted) {
+          setState(() {});
+        }
       },
       child: Column(
         children: [
@@ -721,7 +741,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
                       onTap: () => Navigator.of(context).pop(false),
                       child: Container(
                         alignment: Alignment.center,
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 15),
                         decoration: ShapeDecoration(
                           shape: RoundedRectangleBorder(
                             borderRadius:
@@ -750,7 +771,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
                       onTap: () => Navigator.of(context).pop(true),
                       child: Container(
                         alignment: Alignment.center,
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 15),
                         decoration: const ShapeDecoration(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.all(Radius.circular(10)),
@@ -853,96 +875,24 @@ class _TransactionScreenState extends State<TransactionScreen> {
       ),
       direction: DismissDirection.endToStart,
       confirmDismiss: (direction) async {
-        return await showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text(
-                "Delete Transaction",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
-              content: const Text(
-                "Are you sure you want to delete this transaction?",
-                style: TextStyle(fontSize: 16),
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              backgroundColor: Colors.white,
-              actions: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Material(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(10),
-                          onTap: () => Navigator.of(context).pop(false),
-                          child: Container(
-                            alignment: Alignment.center,
-                            padding: const EdgeInsets.all(8),
-                            decoration: ShapeDecoration(
-                              shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    const BorderRadius.all(Radius.circular(10)),
-                                side: BorderSide(color: Colors.grey.shade200),
-                              ),
-                            ),
-                            child: const Text(
-                              'Cancel',
-                              style: TextStyle(
-                                color: black,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Material(
-                        color: black,
-                        borderRadius: BorderRadius.circular(10),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(10),
-                          onTap: () => Navigator.of(context).pop(true),
-                          child: Container(
-                            alignment: Alignment.center,
-                            padding: const EdgeInsets.all(8),
-                            decoration: const ShapeDecoration(
-                              shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(10)),
-                              ),
-                            ),
-                            child: const Text(
-                              'Delete',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-              actionsPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            );
-          },
-        );
+        return await _showDeleteConfirmationDialog();
       },
-      onDismissed: (direction) {
-        transactionController.deleteTransaction(transaction.id);
-        setState(() {}); // Force rebuild
+      onDismissed: (direction) async {
+        // First remove the transaction from the local list
+        final index = transactionController.filteredTransactions
+            .indexWhere((t) => t.id == transaction.id);
+        if (index != -1) {
+          // Remove from local list immediately to prevent the dismissed widget error
+          transactionController.filteredTransactions.removeAt(index);
+        }
+
+        // Then delete from the database
+        await transactionController.deleteTransaction(transaction.id);
+
+        // Force rebuild
+        if (mounted) {
+          setState(() {});
+        }
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
