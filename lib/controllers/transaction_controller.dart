@@ -610,4 +610,14 @@ class TransactionController extends GetxController {
       update();
     }
   }
+
+  // Reset all filters when navigating away from the transaction screen
+  void resetFilters() {
+    selectedCategory.value = 'All Categories';
+    selectedType.value = 'All Types';
+    if (searchController.text.isNotEmpty) {
+      searchController.clear();
+    }
+    applyFilters();
+  }
 }

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:exper/controllers/auth_controller.dart';
 import 'package:exper/controllers/profile_controller.dart';
 import 'package:exper/controllers/category_controller.dart';
+import 'package:exper/controllers/transaction_controller.dart';
 import 'package:exper/screens/transaction_screen.dart';
 import '../screens/add_transaction_screen.dart';
 import '../screens/dashboard_screen.dart';
@@ -14,6 +15,12 @@ class HomeController extends GetxController {
   var selectedIndex = 0.obs;
 
   void changeTab(int index) {
+    // If we're navigating away from transactions tab (index 1), reset filters
+    if (selectedIndex.value == 1 && index != 1) {
+      // Reset transaction filters
+      Get.find<TransactionController>().resetFilters();
+    }
+
     selectedIndex.value = index;
   }
 }

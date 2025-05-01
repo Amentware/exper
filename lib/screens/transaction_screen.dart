@@ -659,6 +659,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
       },
       child: Container(
         height: 40,
+        width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: Colors.white,
