@@ -20,9 +20,14 @@
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="white">
   <meta name="apple-mobile-web-app-title" content="exper">
   <meta name="theme-color" content="#FFFFFF">
+  
+  <!-- Disable swipe to navigate gesture on iOS -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
 
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
@@ -40,14 +45,19 @@
   
   <style id="splash-screen-style">
     html {
-      height: 100%
+      height: 100%;
+      overscroll-behavior-x: none; /* Prevent overscroll on x-axis */
     }
 
     body {
       margin: 0;
       min-height: 100%;
       background-color: #ffffff;
-          background-size: 100% 100%;
+      background-size: 100% 100%;
+      overscroll-behavior-x: none; /* Prevent overscroll on x-axis */
+      position: fixed; /* Prevent bounce effect */
+      width: 100%;
+      overflow-x: hidden; /* Prevent horizontal scrolling */
     }
 
     .center {
@@ -102,6 +112,35 @@
       document.getElementById("splash-branding")?.remove();
       document.body.style.background = "transparent";
     }
+  </script>
+  
+  <!-- Script to disable iOS swipe navigation gestures -->
+  <script>
+    document.addEventListener('touchstart', function(e) {
+      // Prevent multi-touch gestures on iOS devices
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+    
+    // Prevent swipe navigation on iOS when in standalone mode (PWA)
+    window.addEventListener('load', function() {
+      if (window.navigator.standalone === true) {
+        document.addEventListener('touchmove', function(e) {
+          // Check if the touch started from the edge (approximately 20px from edge)
+          if (e.touches[0].pageX < 20 || e.touches[0].pageX > window.innerWidth - 20) {
+            e.preventDefault();
+          }
+        }, { passive: false });
+      }
+      
+      // Prevent the bounce effect when scrolling
+      document.body.addEventListener('touchmove', function(e) {
+        if (e.scale !== 1) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+    });
   </script>
 </head>
 <body>
