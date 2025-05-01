@@ -162,122 +162,103 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+    // Get current date from the date controller
+    final DateTime initialDate = dateController.text.isNotEmpty
+        ? DateFormat('yyyy-MM-dd').parse(dateController.text)
+        : DateTime.now();
+
+    await showModalBottomSheet(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.light().copyWith(
-            colorScheme: ColorScheme.light(
-              primary: black,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: black,
-              secondaryContainer: Color(0xFFE0E0E0), // For range selection
-              onSecondaryContainer: Colors.black87, // Text on range selection
-            ),
-            dialogBackgroundColor: Colors.white,
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: black,
-                textStyle: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            // Customize calendar day text styles
-            textTheme: TextTheme(
-              // Day numbers in calendar
-              bodyMedium: TextStyle(
-                color: Colors.black,
-                fontSize: 20.0,
-                fontWeight: FontWeight.w500,
-              ),
-              // Weekday headers (S M T W T F S)
-              titleSmall: TextStyle(
-                color: Colors.black87,
-                fontSize: 20.0,
-                fontWeight: FontWeight.bold,
-              ),
-              // Month year picker (May 2024)
-              titleMedium: TextStyle(
-                color: Colors.black,
-                fontSize: 20.0,
-                fontWeight: FontWeight.bold,
-              ),
-              // Selected date text (Thu, May 1)
-              headlineMedium: TextStyle(
-                color: Colors.black,
-                fontSize: 36.0,
-                fontWeight: FontWeight.bold,
-              ),
-              // Title at the top of dialog (Select date)
-              titleLarge: TextStyle(
-                color: Colors.black,
-                fontSize: 28.0,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            appBarTheme: const AppBarTheme(
-              backgroundColor: Colors.white,
-              iconTheme: IconThemeData(color: Colors.black),
-              titleTextStyle: TextStyle(
-                color: Colors.black,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            dialogTheme: DialogTheme(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-            ),
-          ),
-          // Force dialog mode with rounded corners
-          child: Dialog(
-            //insetPadding:
-            // const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.9,
-              height: MediaQuery.of(context).size.height * 0.8,
-              padding: EdgeInsets.zero,
-              margin: EdgeInsets.zero,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      enableDrag: true, // Ensure dragging is enabled
+      builder: (BuildContext context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.5, // 50% of screen initially
+          minChildSize: 0.3, // Minimum size when collapsed
+          maxChildSize: 0.8, // Maximum size when expanded
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
                 color: Colors.white,
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: MediaQuery(
-                  data: MediaQuery.of(context).copyWith(
-                    textScaleFactor: 1.0,
-                    padding: EdgeInsets.zero,
-                  ),
-                  child: child!,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
                 ),
               ),
-            ),
-          ),
+              child: Column(
+                children: [
+                  // Handle for the bottom sheet
+                  Container(
+                    margin: EdgeInsets.only(top: 8),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 12.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Select Date',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Calendar widget
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                      child: ListView(
+                        controller:
+                            scrollController, // Use the provided controller
+                        children: [
+                          CalendarDatePicker(
+                            initialDate: initialDate,
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime.now().add(Duration(days: 365)),
+                            onDateChanged: (DateTime date) {
+                              // Update the date controller
+                              dateController.text =
+                                  DateFormat('yyyy-MM-dd').format(date);
+                              // Close the modal
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
 
-    if (picked != null) {
-      setState(() {
-        // Format the date to show the day name
-        dateController.text = DateFormat('yyyy-MM-dd').format(picked);
-        // Update the UI displayed format to show day name
-        final displayDate = DateFormat('EEE, MMM d').format(picked);
-        // Since dateController is used internally, we keep it as is
-        // But we could display the formatted date in the UI
-      });
-    }
+    setState(() {
+      // Update UI displayed format to show day name after selection
+      if (dateController.text.isNotEmpty) {
+        final date = DateFormat('yyyy-MM-dd').parse(dateController.text);
+        final displayDate = DateFormat('EEE, MMM d').format(date);
+        // No need to update dateController.text here as it's already been updated in onDateChanged
+      }
+    });
   }
 
   Future<void> _selectTime(BuildContext context) async {
@@ -287,85 +268,297 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             DateFormat('h:mm a').parse(timeController.text))
         : TimeOfDay.now();
 
-    final TimeOfDay? picked = await showTimePicker(
+    TimeOfDay selectedTime = initialTime;
+
+    await showModalBottomSheet(
       context: context,
-      initialTime: initialTime,
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.light().copyWith(
-            colorScheme: ColorScheme.light(
-              primary: black,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: black,
-              secondaryContainer: Color(0xFFE0E0E0),
-              onSecondaryContainer: Colors.black87,
-            ),
-            dialogBackgroundColor: Colors.white,
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: black,
-                textStyle: TextStyle(
-                  fontWeight: FontWeight.bold,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      enableDrag: true, // Ensure dragging is enabled
+      builder: (BuildContext context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.5, // 50% of screen initially
+          minChildSize: 0.3, // Minimum size when collapsed
+          maxChildSize: 0.8, // Maximum size when expanded
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
                 ),
               ),
-            ),
-            appBarTheme: const AppBarTheme(
-              backgroundColor: Colors.white,
-              iconTheme: IconThemeData(color: Colors.black),
-              titleTextStyle: TextStyle(
-                color: Colors.black,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+              child: Column(
+                children: [
+                  // Handle for the bottom sheet
+                  Container(
+                    margin: EdgeInsets.only(top: 8),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 12.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Select Time',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Time picker
+                  Expanded(
+                    child: ListView(
+                      controller:
+                          scrollController, // Use the provided controller
+                      children: [
+                        StatefulBuilder(builder: (context, setModalState) {
+                          return Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Time display
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 20.0),
+                                child: Text(
+                                  selectedTime.format(context),
+                                  style: TextStyle(
+                                    fontSize: 36.0,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+
+                              // Hour picker
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  _buildTimeColumn(
+                                    context: context,
+                                    values: List.generate(
+                                        12, (i) => i == 0 ? 12 : i),
+                                    selectedValue: selectedTime.hourOfPeriod,
+                                    label: 'Hour',
+                                    onChanged: (value) {
+                                      setModalState(() {
+                                        final isPM =
+                                            selectedTime.period == DayPeriod.pm;
+                                        final hour = isPM
+                                            ? (value == 12 ? 12 : value + 12)
+                                            : (value == 12 ? 0 : value);
+                                        selectedTime = TimeOfDay(
+                                            hour: hour,
+                                            minute: selectedTime.minute);
+                                      });
+                                    },
+                                  ),
+
+                                  SizedBox(width: 20),
+
+                                  // Minute picker
+                                  _buildTimeColumn(
+                                    context: context,
+                                    values: List.generate(60, (i) => i),
+                                    selectedValue: selectedTime.minute,
+                                    label: 'Minute',
+                                    onChanged: (value) {
+                                      setModalState(() {
+                                        selectedTime = TimeOfDay(
+                                            hour: selectedTime.hour,
+                                            minute: value);
+                                      });
+                                    },
+                                  ),
+
+                                  SizedBox(width: 20),
+
+                                  // AM/PM picker
+                                  Column(
+                                    children: [
+                                      Text(
+                                        'AM/PM',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                      SizedBox(height: 12),
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          border: Border.all(
+                                              color: Colors.grey.shade300),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Column(
+                                          children: [
+                                            InkWell(
+                                              onTap: () {
+                                                setModalState(() {
+                                                  if (selectedTime.period ==
+                                                      DayPeriod.pm) {
+                                                    // Convert to AM
+                                                    final hour = selectedTime
+                                                                .hour >=
+                                                            12
+                                                        ? selectedTime.hour - 12
+                                                        : selectedTime.hour;
+                                                    selectedTime = TimeOfDay(
+                                                        hour: hour,
+                                                        minute: selectedTime
+                                                            .minute);
+                                                  }
+                                                });
+                                              },
+                                              child: Container(
+                                                width: 80,
+                                                height: 44,
+                                                alignment: Alignment.center,
+                                                decoration: BoxDecoration(
+                                                  color: selectedTime.period ==
+                                                          DayPeriod.am
+                                                      ? black
+                                                      : Colors.transparent,
+                                                  borderRadius:
+                                                      BorderRadius.only(
+                                                    topLeft: Radius.circular(8),
+                                                    topRight:
+                                                        Radius.circular(8),
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  'AM',
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                    color:
+                                                        selectedTime.period ==
+                                                                DayPeriod.am
+                                                            ? Colors.white
+                                                            : Colors.black,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            Divider(
+                                                height: 1,
+                                                color: Colors.grey.shade300),
+                                            InkWell(
+                                              onTap: () {
+                                                setModalState(() {
+                                                  if (selectedTime.period ==
+                                                      DayPeriod.am) {
+                                                    // Convert to PM
+                                                    final hour =
+                                                        selectedTime.hour + 12;
+                                                    selectedTime = TimeOfDay(
+                                                        hour: hour >= 24
+                                                            ? hour - 12
+                                                            : hour,
+                                                        minute: selectedTime
+                                                            .minute);
+                                                  }
+                                                });
+                                              },
+                                              child: Container(
+                                                width: 80,
+                                                height: 44,
+                                                alignment: Alignment.center,
+                                                decoration: BoxDecoration(
+                                                  color: selectedTime.period ==
+                                                          DayPeriod.pm
+                                                      ? black
+                                                      : Colors.transparent,
+                                                  borderRadius:
+                                                      BorderRadius.only(
+                                                    bottomLeft:
+                                                        Radius.circular(8),
+                                                    bottomRight:
+                                                        Radius.circular(8),
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  'PM',
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                    color:
+                                                        selectedTime.period ==
+                                                                DayPeriod.pm
+                                                            ? Colors.white
+                                                            : Colors.black,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+
+                              // Confirm button
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 24.0, horizontal: 16.0),
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    timeController.text =
+                                        selectedTime.format(context);
+                                    Navigator.of(context).pop();
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: black,
+                                    foregroundColor: Colors.white,
+                                    minimumSize: Size(double.infinity, 50),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Confirm',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ),
-            dialogTheme: DialogTheme(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          ),
-          // Force dialog mode with rounded corners
-          child: Dialog(
-            //insetPadding:
-            //const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: Colors.white,
-              ),
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.98,
-                maxHeight: MediaQuery.of(context).size.height * 0.6,
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: child!,
-              ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
 
-    if (picked != null) {
-      setState(() {
-        // Format the time to 12-hour format with AM/PM
-        final now = DateTime.now();
-        final selectedTime = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          picked.hour,
-          picked.minute,
-        );
-        timeController.text = DateFormat('h:mm a').format(selectedTime);
-      });
-    }
+    setState(() {});
   }
 
   Future<void> _showCategoryDialog(
@@ -397,58 +590,68 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       }
     }
 
-    showDialog(
+    await showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      enableDrag: true, // Ensure dragging is enabled
       builder: (context) {
-        return Dialog(
-          insetPadding:
-              const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: Colors.white,
-            ),
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.98,
-              maxHeight: MediaQuery.of(context).size.height *
-                  0.4, // Reduced height to show about 4 rows
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
+        return DraggableScrollableSheet(
+          initialChildSize: 0.5, // 50% of screen initially
+          minChildSize: 0.3, // Minimum size when collapsed
+          maxChildSize: 0.8, // Maximum size when expanded
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
               child: Column(
                 children: [
-                  AppBar(
-                    title: Text(
-                      'Select ${typeFilter[0].toUpperCase() + typeFilter.substring(1)} Category',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                        fontSize: 16,
-                      ),
-                    ),
-                    backgroundColor: Colors.white,
-                    elevation: 0,
-                    toolbarHeight: 48,
-                    leading: IconButton(
-                      icon:
-                          Icon(Icons.arrow_back, color: Colors.black, size: 20),
-                      onPressed: () => Get.back(),
+                  // Handle for the bottom sheet
+                  Container(
+                    margin: EdgeInsets.only(top: 8),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  Container(
-                    height: MediaQuery.of(context).size.height *
-                        0.35, // Approximately 4 rows
+
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 12.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Select ${typeFilter[0].toUpperCase() + typeFilter.substring(1)} Category',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Categories grid
+                  Expanded(
                     child: GridView.count(
+                      controller:
+                          scrollController, // Use the provided controller
                       padding: const EdgeInsets.all(12),
                       crossAxisCount: 4,
                       childAspectRatio: 0.8,
                       crossAxisSpacing: 8,
                       mainAxisSpacing: 12,
-                      shrinkWrap: true,
                       children: filteredCategories.map((category) {
                         return InkWell(
                           onTap: () {
@@ -475,16 +678,21 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              Text(
-                                category.name,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.w500,
+                              Container(
+                                width: 60,
+                                child: Text(
+                                  category.name.length > 10
+                                      ? category.name.substring(0, 9) + '..'
+                                      : category.name,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 2,
                                 ),
-                                textAlign: TextAlign.center,
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 2,
                               ),
                             ],
                           ),
@@ -494,10 +702,70 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   ),
                 ],
               ),
-            ),
-          ),
+            );
+          },
         );
       },
+    );
+  }
+
+  // Helper method to build time columns (hours, minutes)
+  Widget _buildTimeColumn({
+    required BuildContext context,
+    required List<int> values,
+    required int selectedValue,
+    required String label,
+    required Function(int) onChanged,
+  }) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey,
+          ),
+        ),
+        SizedBox(height: 12),
+        Container(
+          height: 180,
+          width: 70,
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: ListView.builder(
+            itemCount: values.length,
+            itemExtent: 50,
+            itemBuilder: (context, index) {
+              final value = values[index];
+              final isSelected = value == selectedValue;
+              final formattedValue = value.toString().padLeft(2, '0');
+
+              return InkWell(
+                onTap: () => onChanged(value),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isSelected ? black : Colors.transparent,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    formattedValue,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected ? Colors.white : Colors.black,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 

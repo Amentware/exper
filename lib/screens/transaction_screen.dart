@@ -320,115 +320,75 @@ class _TransactionScreenState extends State<TransactionScreen> {
     // Get filtered categories based on the current type filter
     final List<String> filteredNames = _getFilteredCategoryNames();
 
-    return showDialog(
+    return showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      enableDrag: true, // Ensure dragging is enabled
       builder: (context) {
-        return Dialog(
-          insetPadding:
-              const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: Colors.white,
-            ),
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.9,
-              maxHeight: MediaQuery.of(context).size.height *
-                  0.4, // Reduced height to show about 4 rows
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
+        return DraggableScrollableSheet(
+          initialChildSize: 0.5, // 50% of screen initially
+          minChildSize: 0.3, // Minimum size when collapsed
+          maxChildSize: 0.8, // Maximum size when expanded
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
               child: Column(
                 children: [
-                  AppBar(
-                    title: Text(
-                      'Select Category',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                        fontSize: 16,
-                      ),
-                    ),
-                    backgroundColor: Colors.white,
-                    elevation: 0,
-                    toolbarHeight: 48,
-                    leading: IconButton(
-                      icon:
-                          Icon(Icons.arrow_back, color: Colors.black, size: 20),
-                      onPressed: () => Get.back(),
+                  // Handle for the bottom sheet
+                  Container(
+                    margin: EdgeInsets.only(top: 8),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
+
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 12.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Select Category',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Categories grid
                   Expanded(
-                    child: Container(
-                      height: MediaQuery.of(context).size.height *
-                          0.35, // Approximately 4 rows
-                      child: GridView.count(
-                        crossAxisCount: 4,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        childAspectRatio: 0.8,
-                        crossAxisSpacing: 8,
-                        mainAxisSpacing: 12,
-                        shrinkWrap: true,
-                        children: filteredNames.map((categoryName) {
-                          // Special case for 'All Categories'
-                          if (categoryName == 'All Categories') {
-                            return InkWell(
-                              onTap: () {
-                                transactionController
-                                    .setCategory('All Categories');
-                                // Update the UI after selection
-                                setState(() {});
-                                Get.back();
-                              },
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    width: 60,
-                                    height: 60,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.shade100,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Center(
-                                      child: Icon(
-                                        Icons.filter_list_outlined,
-                                        size: 28,
-                                        color: black,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'All',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }
-
-                          // Get the category to find its ID for the icon
-                          final category = categoryController
-                              .getCategoryByName(categoryName);
-                          final categoryId = category?.id;
-
+                    child: GridView.count(
+                      controller:
+                          scrollController, // Use the provided controller
+                      padding: const EdgeInsets.all(12),
+                      crossAxisCount: 4,
+                      childAspectRatio: 0.8,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 12,
+                      children: filteredNames.map((categoryName) {
+                        // Special case for 'All Categories'
+                        if (categoryName == 'All Categories') {
                           return InkWell(
                             onTap: () {
-                              if (category != null) {
-                                // Pass the category ID, not the name
-                                transactionController.setCategory(category.id);
-                              } else {
-                                transactionController.setCategory(categoryName);
-                              }
+                              transactionController
+                                  .setCategory('All Categories');
                               // Update the UI after selection
                               setState(() {});
                               Get.back();
@@ -445,8 +405,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                                   ),
                                   child: Center(
                                     child: Icon(
-                                      categoryController
-                                          .getCategoryIcon(categoryId),
+                                      Icons.filter_list_outlined,
                                       size: 28,
                                       color: black,
                                     ),
@@ -454,9 +413,63 @@ class _TransactionScreenState extends State<TransactionScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  categoryName,
+                                  'All',
                                   style: TextStyle(
                                     fontSize: 12,
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        // Get the category to find its ID for the icon
+                        final category =
+                            categoryController.getCategoryByName(categoryName);
+                        final categoryId = category?.id;
+
+                        return InkWell(
+                          onTap: () {
+                            if (category != null) {
+                              // Pass the category ID, not the name
+                              transactionController.setCategory(category.id);
+                            } else {
+                              transactionController.setCategory(categoryName);
+                            }
+                            // Update the UI after selection
+                            setState(() {});
+                            Get.back();
+                          },
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 60,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    categoryController
+                                        .getCategoryIcon(categoryId),
+                                    size: 28,
+                                    color: black,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Container(
+                                width: 60,
+                                child: Text(
+                                  categoryName.length > 10
+                                      ? categoryName.substring(0, 9) + '..'
+                                      : categoryName,
+                                  style: TextStyle(
+                                    fontSize: 11,
                                     color: Colors.black,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -464,17 +477,17 @@ class _TransactionScreenState extends State<TransactionScreen> {
                                   textAlign: TextAlign.center,
                                   maxLines: 2,
                                 ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                      ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
                     ),
                   ),
                 ],
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
@@ -1253,6 +1266,226 @@ class _TransactionScreenState extends State<TransactionScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _showDatePickerDialog(BuildContext context) {
+    // Get the current date from the transaction controller
+    final DateTime initialDate = DateTime.now();
+
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      enableDrag: true, // Ensure dragging is enabled
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.5, // 50% of screen initially
+          minChildSize: 0.3, // Minimum size when collapsed
+          maxChildSize: 0.8, // Maximum size when expanded
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Handle for the bottom sheet
+                  Container(
+                    margin: EdgeInsets.only(top: 8),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 12.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Select Date',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Calendar widget
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                      child: ListView(
+                        controller:
+                            scrollController, // Use the provided controller
+                        children: [
+                          CalendarDatePicker(
+                            initialDate: initialDate,
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2030),
+                            onDateChanged: (DateTime date) {
+                              // Directly update the filter with the selected date
+                              transactionController.filterByDateRangeLocally(
+                                  date,
+                                  date.add(Duration(
+                                      hours: 23, minutes: 59, seconds: 59)));
+                              // Update the UI
+                              setState(() {});
+                              Get.back();
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _showTimePickerDialog(BuildContext context) {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      enableDrag: true,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.5,
+          minChildSize: 0.3,
+          maxChildSize: 0.8,
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Handle for the bottom sheet
+                  Container(
+                    margin: EdgeInsets.only(top: 8),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 12.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Select Time',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Time picker widget
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      children: [
+                        // Use a simple time picker
+                        Container(
+                          padding: EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              ElevatedButton(
+                                onPressed: () async {
+                                  final TimeOfDay? picked =
+                                      await showTimePicker(
+                                    context: context,
+                                    initialTime: TimeOfDay.now(),
+                                  );
+                                  if (picked != null) {
+                                    // Get current date from transaction controller
+                                    final currentDate = DateTime.now();
+
+                                    // Create a new DateTime with the selected time
+                                    final newDateTime = DateTime(
+                                      currentDate.year,
+                                      currentDate.month,
+                                      currentDate.day,
+                                      picked.hour,
+                                      picked.minute,
+                                    );
+
+                                    // Apply the filter
+                                    transactionController
+                                        .filterByDateRangeLocally(
+                                      newDateTime,
+                                      newDateTime.add(Duration(minutes: 59)),
+                                    );
+
+                                    // Update the UI
+                                    setState(() {});
+                                    Navigator.of(context).pop();
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: black,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  padding: EdgeInsets.symmetric(vertical: 16),
+                                  minimumSize: Size(double.infinity, 50),
+                                ),
+                                child: Text(
+                                  'Open Time Picker',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
