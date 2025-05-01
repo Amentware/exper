@@ -339,8 +339,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 color: Colors.white,
               ),
               constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.9,
-                maxHeight: MediaQuery.of(context).size.height * 0.8,
+                maxWidth: MediaQuery.of(context).size.width * 0.98,
+                maxHeight: MediaQuery.of(context).size.height * 0.6,
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(10),
@@ -413,8 +413,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               color: Colors.white,
             ),
             constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.9,
-              maxHeight: MediaQuery.of(context).size.height * 0.8,
+              maxWidth: MediaQuery.of(context).size.width * 0.98,
+              maxHeight: MediaQuery.of(context).size.height *
+                  0.4, // Reduced height to show about 4 rows
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
@@ -438,13 +439,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       onPressed: () => Get.back(),
                     ),
                   ),
-                  Expanded(
+                  Container(
+                    height: MediaQuery.of(context).size.height *
+                        0.35, // Approximately 4 rows
                     child: GridView.count(
                       padding: const EdgeInsets.all(12),
                       crossAxisCount: 4,
                       childAspectRatio: 0.8,
                       crossAxisSpacing: 8,
                       mainAxisSpacing: 12,
+                      shrinkWrap: true,
                       children: filteredCategories.map((category) {
                         return InkWell(
                           onTap: () {

@@ -337,7 +337,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
             ),
             constraints: BoxConstraints(
               maxWidth: MediaQuery.of(context).size.width * 0.9,
-              maxHeight: MediaQuery.of(context).size.height * 0.8,
+              maxHeight: MediaQuery.of(context).size.height *
+                  0.4, // Reduced height to show about 4 rows
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
@@ -362,19 +363,72 @@ class _TransactionScreenState extends State<TransactionScreen> {
                     ),
                   ),
                   Expanded(
-                    child: GridView.count(
-                      crossAxisCount: 4,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      childAspectRatio: 0.8,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 12,
-                      children: filteredNames.map((categoryName) {
-                        // Special case for 'All Categories'
-                        if (categoryName == 'All Categories') {
+                    child: Container(
+                      height: MediaQuery.of(context).size.height *
+                          0.35, // Approximately 4 rows
+                      child: GridView.count(
+                        crossAxisCount: 4,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        childAspectRatio: 0.8,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 12,
+                        shrinkWrap: true,
+                        children: filteredNames.map((categoryName) {
+                          // Special case for 'All Categories'
+                          if (categoryName == 'All Categories') {
+                            return InkWell(
+                              onTap: () {
+                                transactionController
+                                    .setCategory('All Categories');
+                                // Update the UI after selection
+                                setState(() {});
+                                Get.back();
+                              },
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 60,
+                                    height: 60,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade100,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Center(
+                                      child: Icon(
+                                        Icons.filter_list_outlined,
+                                        size: 28,
+                                        color: black,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'All',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          // Get the category to find its ID for the icon
+                          final category = categoryController
+                              .getCategoryByName(categoryName);
+                          final categoryId = category?.id;
+
                           return InkWell(
                             onTap: () {
-                              transactionController
-                                  .setCategory('All Categories');
+                              if (category != null) {
+                                // Pass the category ID, not the name
+                                transactionController.setCategory(category.id);
+                              } else {
+                                transactionController.setCategory(categoryName);
+                              }
                               // Update the UI after selection
                               setState(() {});
                               Get.back();
@@ -391,7 +445,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
                                   ),
                                   child: Center(
                                     child: Icon(
-                                      Icons.filter_list_outlined,
+                                      categoryController
+                                          .getCategoryIcon(categoryId),
                                       size: 28,
                                       color: black,
                                     ),
@@ -399,70 +454,21 @@ class _TransactionScreenState extends State<TransactionScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'All',
+                                  categoryName,
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Colors.black,
                                     fontWeight: FontWeight.w500,
                                   ),
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
                                 ),
                               ],
                             ),
                           );
-                        }
-
-                        // Get the category to find its ID for the icon
-                        final category =
-                            categoryController.getCategoryByName(categoryName);
-                        final categoryId = category?.id;
-
-                        return InkWell(
-                          onTap: () {
-                            if (category != null) {
-                              // Pass the category ID, not the name
-                              transactionController.setCategory(category.id);
-                            } else {
-                              transactionController.setCategory(categoryName);
-                            }
-                            // Update the UI after selection
-                            setState(() {});
-                            Get.back();
-                          },
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 60,
-                                height: 60,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Center(
-                                  child: Icon(
-                                    categoryController
-                                        .getCategoryIcon(categoryId),
-                                    size: 28,
-                                    color: black,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                categoryName,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                                maxLines: 2,
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
+                        }).toList(),
+                      ),
                     ),
                   ),
                 ],
