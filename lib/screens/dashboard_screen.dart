@@ -6,8 +6,9 @@ import '../controllers/auth_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/transaction_controller.dart';
 import '../controllers/category_controller.dart';
+import '../controllers/budget_controller.dart';
 import '../widgets/colors.dart';
-import 'package:intl/intl.dart';
+import '../screens/home_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   final AuthController authController = Get.find<AuthController>();
@@ -15,6 +16,7 @@ class DashboardScreen extends StatelessWidget {
   final TransactionController transactionController =
       Get.find<TransactionController>();
   final CategoryController categoryController = Get.find<CategoryController>();
+  final BudgetController budgetController = Get.put(BudgetController());
 
   DashboardScreen({Key? key}) : super(key: key);
 
@@ -77,6 +79,11 @@ class DashboardScreen extends StatelessWidget {
 
             // Recent transactions section
             _buildRecentTransactions(),
+
+            const SizedBox(height: 24),
+
+            // Top Budget Categories Section
+            _buildTopBudgetCategories(),
 
             const SizedBox(height: 24),
 
@@ -928,6 +935,7 @@ class DashboardScreen extends StatelessWidget {
                   onPressed: () {
                     // Navigate to transactions tab (index 1)
                     // This will be handled in the Home controller
+                    Get.find<HomeController>().changeTab(1);
                   },
                   child: Text(
                     'See All',
@@ -1159,6 +1167,124 @@ class DashboardScreen extends StatelessWidget {
                             ))
                         .toList(),
                   ),
+          ],
+        ),
+      );
+    });
+  }
+
+  // Build top budget categories section
+  Widget _buildTopBudgetCategories() {
+    return Obx(() {
+      // Check if we have any budgets
+      if (budgetController.budgets.isEmpty) {
+        return const SizedBox.shrink(); // Don't display anything if no budgets
+      }
+
+      final formatter = NumberFormat('#,##0', 'en_IN');
+      final topBudgets = budgetController.getTopBudgetCategories(limit: 3);
+
+      if (topBudgets.isEmpty) {
+        return const SizedBox.shrink();
+      }
+
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Budget Status',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    // Navigate to budget tab (index 2)
+                    Get.find<HomeController>().changeTab(2);
+                  },
+                  child: Text(
+                    'View All',
+                    style: TextStyle(
+                      color: black,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Budget categories list
+            ...topBudgets.map((budget) {
+              final category = budget['category'] as String;
+              final spent = budget['spent'] as double;
+              final total = budget['budget'] as double;
+              final progress = budget['progress'] as double;
+
+              // Determine color based on progress
+              Color progressColor;
+              if (progress >= 1.0) {
+                progressColor = Colors.black; // Full black for over budget
+              } else if (progress >= 0.75) {
+                progressColor =
+                    Colors.grey.shade700; // Dark grey for approaching limit
+              } else {
+                progressColor =
+                    Colors.grey.shade500; // Medium grey for normal progress
+              }
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            category,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 15,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          '${profileController.currency}${formatter.format(spent)} / ${profileController.currency}${formatter.format(total)}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: progressColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(
+                      value: progress > 1.0 ? 1.0 : progress,
+                      backgroundColor: Colors.grey[200],
+                      valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+                      borderRadius: BorderRadius.circular(5),
+                      minHeight: 6,
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
           ],
         ),
       );

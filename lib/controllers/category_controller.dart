@@ -137,6 +137,37 @@ class CategoryController extends GetxController {
     }
   }
 
+  // Get the type of a category (expense or income)
+  String getCategoryType(String categoryName) {
+    try {
+      final category = getCategoryByName(categoryName);
+      if (category != null) {
+        return category.type;
+      }
+
+      // Fallback logic for when category isn't found
+      final nameLower = categoryName.trim().toLowerCase();
+      final incomeKeywords = [
+        'income',
+        'salary',
+        'revenue',
+        'wage',
+        'earnings',
+        'stipend',
+        'bonus'
+      ];
+
+      if (incomeKeywords.any((keyword) => nameLower.contains(keyword))) {
+        return 'income';
+      }
+
+      // Default to expense if uncertain
+      return 'expense';
+    } catch (e) {
+      return 'expense';
+    }
+  }
+
   // Check if a category exists with the same name
   bool categoryExists(String name) {
     return categories
