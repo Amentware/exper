@@ -179,85 +179,48 @@ class _TransactionScreenState extends State<TransactionScreen> {
   }
 
   Widget _buildTypeDropdown() {
-    // Simple dropdown without GetX reactivity
-    return Container(
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10), // Updated to radius 10
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: transactionController.selectedType.value,
-          icon: Padding(
-            padding: const EdgeInsets.only(left: 8.0),
-            child: Icon(Icons.arrow_drop_down, color: black),
-          ),
-          isExpanded: true,
-          isDense: true,
-          alignment: Alignment.centerLeft,
-          onChanged: (String? newValue) {
-            if (newValue != null) {
-              // Check if the current category is valid with the new type
-              String currentCategory =
-                  transactionController.selectedCategory.value;
+    // Get the current type icon
+    IconData typeIcon;
+    switch (transactionController.selectedType.value) {
+      case 'Income':
+        typeIcon = Icons.arrow_upward;
+        break;
+      case 'Expense':
+        typeIcon = Icons.arrow_downward;
+        break;
+      case 'All Types':
+      default:
+        typeIcon = Icons.filter_list_outlined;
+    }
 
-              transactionController.setType(newValue);
-
-              // Reset to 'All Categories' when switching types
-              if (newValue != 'All Types' &&
-                  currentCategory != 'All Categories') {
-                // If current category doesn't match new type, reset to 'All Categories'
-                bool categoryMatchesType = categoryController.categories
-                    .where((category) =>
-                        category.name == currentCategory &&
-                        category.type == newValue.toLowerCase())
-                    .isNotEmpty;
-
-                if (!categoryMatchesType) {
-                  transactionController.setCategory('All Categories');
-                }
-              }
-
-              setState(() {}); // Force rebuild
-            }
-          },
-          items: transactionController.types
-              .map<DropdownMenuItem<String>>((String value) {
-            // Get appropriate icon for each type
-            IconData iconData;
-            switch (value) {
-              case 'Income':
-                iconData = Icons.arrow_upward_outlined;
-                break;
-              case 'Expense':
-                iconData = Icons.arrow_downward_outlined;
-                break;
-              case 'All Types':
-              default:
-                iconData = Icons.filter_list_outlined;
-            }
-
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Row(
-                children: [
-                  Icon(iconData, size: 18, color: black),
-                  const SizedBox(width: 12),
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+    return InkWell(
+      onTap: () => _showTypeBottomSheet(context),
+      child: Container(
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Row(
+          children: [
+            Icon(typeIcon, size: 18, color: black),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                transactionController.selectedType.value,
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
-            );
-          }).toList(),
+            ),
+            Icon(Icons.arrow_drop_down, color: black),
+          ],
         ),
       ),
     );
@@ -327,7 +290,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
       enableDrag: true, // Ensure dragging is enabled
       builder: (context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.5, // 50% of screen initially
+          initialChildSize: 0.6, // 50% of screen initially
           minChildSize: 0.3, // Minimum size when collapsed
           maxChildSize: 0.8, // Maximum size when expanded
           expand: false,
@@ -839,13 +802,6 @@ class _TransactionScreenState extends State<TransactionScreen> {
                               ),
                             ),
 
-                            // Divider between header and transactions
-                            Divider(
-                              height: 1,
-                              thickness: 1,
-                              color: Colors.grey.shade100,
-                            ),
-
                             // Transaction items for this date
                             ...transactions.map((transaction) {
                               try {
@@ -1223,7 +1179,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
       enableDrag: true, // Ensure dragging is enabled
       builder: (context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.5, // 50% of screen initially
+          initialChildSize: 0.6, // 50% of screen initially
           minChildSize: 0.3, // Minimum size when collapsed
           maxChildSize: 0.8, // Maximum size when expanded
           expand: false,
@@ -1313,7 +1269,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
       enableDrag: true,
       builder: (context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.5,
+          initialChildSize: 0.6,
           minChildSize: 0.3,
           maxChildSize: 0.8,
           expand: false,
@@ -1415,6 +1371,262 @@ class _TransactionScreenState extends State<TransactionScreen> {
                                     color: Colors.white,
                                     fontSize: 16,
                                   ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Add this method to show the type selection bottom sheet
+  Future<void> _showTypeBottomSheet(BuildContext context) async {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      enableDrag: true,
+      builder: (BuildContext context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.35, // Smaller size for the grid layout
+          minChildSize: 0.25, // Smaller minimum size
+          maxChildSize: 0.45, // Smaller maximum size
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: Column(
+                children: [
+                  // Handle for the bottom sheet
+                  Container(
+                    margin: EdgeInsets.only(top: 8),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 12.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Select Transaction Type',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Transaction type options
+                  Expanded(
+                    child: GridView.count(
+                      controller: scrollController,
+                      padding: const EdgeInsets.all(12),
+                      crossAxisCount: 3,
+                      childAspectRatio: 0.8,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 12,
+                      children: [
+                        // All Types option
+                        InkWell(
+                          onTap: () {
+                            // No category filtering needed for "All Types"
+                            transactionController.setType('All Types');
+                            Navigator.of(context).pop();
+                            setState(() {});
+                          },
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 60,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: transactionController
+                                              .selectedType.value ==
+                                          'All Types'
+                                      ? black
+                                      : Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    Icons.filter_list_outlined,
+                                    size: 28,
+                                    color: transactionController
+                                                .selectedType.value ==
+                                            'All Types'
+                                        ? Colors.white
+                                        : black,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'All Types',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Expense option
+                        InkWell(
+                          onTap: () {
+                            // Get current category
+                            String currentCategory =
+                                transactionController.selectedCategory.value;
+
+                            // Update the type
+                            transactionController.setType('Expense');
+
+                            // Reset to 'All Categories' if current category doesn't match new type
+                            if (currentCategory != 'All Categories') {
+                              bool categoryMatchesType = categoryController
+                                  .categories
+                                  .where((category) =>
+                                      category.id == currentCategory &&
+                                      category.type == 'expense')
+                                  .isNotEmpty;
+
+                              if (!categoryMatchesType) {
+                                transactionController
+                                    .setCategory('All Categories');
+                              }
+                            }
+
+                            Navigator.of(context).pop();
+                            setState(() {});
+                          },
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 60,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: transactionController
+                                              .selectedType.value ==
+                                          'Expense'
+                                      ? black
+                                      : Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    Icons.arrow_downward,
+                                    size: 28,
+                                    color: transactionController
+                                                .selectedType.value ==
+                                            'Expense'
+                                        ? Colors.white
+                                        : black,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Expense',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Income option
+                        InkWell(
+                          onTap: () {
+                            // Get current category
+                            String currentCategory =
+                                transactionController.selectedCategory.value;
+
+                            // Update the type
+                            transactionController.setType('Income');
+
+                            // Reset to 'All Categories' if current category doesn't match new type
+                            if (currentCategory != 'All Categories') {
+                              bool categoryMatchesType = categoryController
+                                  .categories
+                                  .where((category) =>
+                                      category.id == currentCategory &&
+                                      category.type == 'income')
+                                  .isNotEmpty;
+
+                              if (!categoryMatchesType) {
+                                transactionController
+                                    .setCategory('All Categories');
+                              }
+                            }
+
+                            Navigator.of(context).pop();
+                            setState(() {});
+                          },
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 60,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: transactionController
+                                              .selectedType.value ==
+                                          'Income'
+                                      ? black
+                                      : Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    Icons.arrow_upward,
+                                    size: 28,
+                                    color: transactionController
+                                                .selectedType.value ==
+                                            'Income'
+                                        ? Colors.white
+                                        : black,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Income',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_time_picker_spinner/flutter_time_picker_spinner.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/transaction_controller.dart';
@@ -174,7 +175,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       enableDrag: true, // Ensure dragging is enabled
       builder: (BuildContext context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.5, // 50% of screen initially
+          initialChildSize: 0.6, // 50% of screen initially
           minChildSize: 0.3, // Minimum size when collapsed
           maxChildSize: 0.8, // Maximum size when expanded
           expand: false,
@@ -261,23 +262,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     });
   }
 
-  Future<void> _selectTime(BuildContext context) async {
-    // Parse existing time or default to current time
-    final TimeOfDay initialTime = timeController.text.isNotEmpty
-        ? TimeOfDay.fromDateTime(
-            DateFormat('h:mm a').parse(timeController.text))
-        : TimeOfDay.now();
+  void _showTimePickerDialog(BuildContext context) {
+    DateTime initialTime = timeController.text.isNotEmpty
+        ? DateFormat('h:mm a').parse(timeController.text)
+        : DateTime.now();
 
-    TimeOfDay selectedTime = initialTime;
-
-    await showModalBottomSheet(
+    showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       enableDrag: true, // Ensure dragging is enabled
       builder: (BuildContext context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.7, // 70% of screen initially
+          initialChildSize: 0.6, // 60% of screen initially
           minChildSize: 0.3, // Minimum size when collapsed
           maxChildSize: 0.8, // Maximum size when expanded
           expand: false,
@@ -322,231 +319,104 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     ),
                   ),
 
-                  // Time picker
+                  // Time picker spinner
                   Expanded(
                     child: ListView(
-                      controller:
-                          scrollController, // Use the provided controller
+                      controller: scrollController,
                       children: [
-                        StatefulBuilder(builder: (context, setModalState) {
-                          return Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                        TimePickerSpinner(
+                          time: initialTime,
+                          is24HourMode: false,
+                          isShowSeconds: false,
+                          minutesInterval: 1,
+                          normalTextStyle: TextStyle(
+                            fontSize: 24,
+                            color: Colors.black54,
+                          ),
+                          highlightedTextStyle: TextStyle(
+                            fontSize: 24,
+                            color: black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          spacing: 30,
+                          itemHeight: 60,
+                          isForce2Digits: true,
+                          onTimeChange: (DateTime selectedTime) {
+                            // Format time to 12-hour format with AM/PM
+                            final formattedTime =
+                                DateFormat('h:mm a').format(selectedTime);
+                            timeController.text = formattedTime;
+                          },
+                        ),
+
+                        // Buttons
+                        Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Row(
                             children: [
-                              // Time display
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 20.0),
-                                child: Text(
-                                  selectedTime.format(context),
-                                  style: TextStyle(
-                                    fontSize: 36.0,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
+                              Expanded(
+                                child: Material(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(10),
+                                    onTap: () => Navigator.of(context).pop(),
+                                    child: Container(
+                                      alignment: Alignment.center,
+                                      padding: const EdgeInsets.all(15),
+                                      decoration: ShapeDecoration(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.all(
+                                            Radius.circular(10),
+                                          ),
+                                          side: BorderSide(
+                                              color: Colors.grey.shade200),
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        'Cancel',
+                                        style: TextStyle(
+                                          color: black,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
-
-                              // Hour picker
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  _buildTimeColumn(
-                                    context: context,
-                                    values: List.generate(
-                                        12, (i) => i == 0 ? 12 : i),
-                                    selectedValue: selectedTime.hourOfPeriod,
-                                    label: 'Hour',
-                                    onChanged: (value) {
-                                      setModalState(() {
-                                        final isPM =
-                                            selectedTime.period == DayPeriod.pm;
-                                        final hour = isPM
-                                            ? (value == 12 ? 12 : value + 12)
-                                            : (value == 12 ? 0 : value);
-                                        selectedTime = TimeOfDay(
-                                            hour: hour,
-                                            minute: selectedTime.minute);
-                                      });
-                                    },
-                                  ),
-
-                                  SizedBox(width: 20),
-
-                                  // Minute picker
-                                  _buildTimeColumn(
-                                    context: context,
-                                    values: List.generate(60, (i) => i),
-                                    selectedValue: selectedTime.minute,
-                                    label: 'Minute',
-                                    onChanged: (value) {
-                                      setModalState(() {
-                                        selectedTime = TimeOfDay(
-                                            hour: selectedTime.hour,
-                                            minute: value);
-                                      });
-                                    },
-                                  ),
-
-                                  SizedBox(width: 20),
-
-                                  // AM/PM picker
-                                  Column(
-                                    children: [
-                                      Text(
-                                        'AM/PM',
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Material(
+                                  color: black,
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: InkWell(
+                                    splashColor: Colors.black,
+                                    borderRadius: BorderRadius.circular(10),
+                                    onTap: () => Navigator.of(context).pop(),
+                                    child: Container(
+                                      alignment: Alignment.center,
+                                      padding: const EdgeInsets.all(15),
+                                      decoration: const ShapeDecoration(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.all(
+                                            Radius.circular(10),
+                                          ),
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        'Confirm',
                                         style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.grey,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w900,
                                         ),
                                       ),
-                                      SizedBox(height: 12),
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          border: Border.all(
-                                              color: Colors.grey.shade300),
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        child: Column(
-                                          children: [
-                                            InkWell(
-                                              onTap: () {
-                                                setModalState(() {
-                                                  if (selectedTime.period ==
-                                                      DayPeriod.pm) {
-                                                    // Convert to AM
-                                                    final hour = selectedTime
-                                                                .hour >=
-                                                            12
-                                                        ? selectedTime.hour - 12
-                                                        : selectedTime.hour;
-                                                    selectedTime = TimeOfDay(
-                                                        hour: hour,
-                                                        minute: selectedTime
-                                                            .minute);
-                                                  }
-                                                });
-                                              },
-                                              child: Container(
-                                                width: 80,
-                                                height: 44,
-                                                alignment: Alignment.center,
-                                                decoration: BoxDecoration(
-                                                  color: selectedTime.period ==
-                                                          DayPeriod.am
-                                                      ? black
-                                                      : Colors.transparent,
-                                                  borderRadius:
-                                                      BorderRadius.only(
-                                                    topLeft: Radius.circular(8),
-                                                    topRight:
-                                                        Radius.circular(8),
-                                                  ),
-                                                ),
-                                                child: Text(
-                                                  'AM',
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                    color:
-                                                        selectedTime.period ==
-                                                                DayPeriod.am
-                                                            ? Colors.white
-                                                            : Colors.black,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            Divider(
-                                                height: 1,
-                                                color: Colors.grey.shade300),
-                                            InkWell(
-                                              onTap: () {
-                                                setModalState(() {
-                                                  if (selectedTime.period ==
-                                                      DayPeriod.am) {
-                                                    // Convert to PM
-                                                    final hour =
-                                                        selectedTime.hour + 12;
-                                                    selectedTime = TimeOfDay(
-                                                        hour: hour >= 24
-                                                            ? hour - 12
-                                                            : hour,
-                                                        minute: selectedTime
-                                                            .minute);
-                                                  }
-                                                });
-                                              },
-                                              child: Container(
-                                                width: 80,
-                                                height: 44,
-                                                alignment: Alignment.center,
-                                                decoration: BoxDecoration(
-                                                  color: selectedTime.period ==
-                                                          DayPeriod.pm
-                                                      ? black
-                                                      : Colors.transparent,
-                                                  borderRadius:
-                                                      BorderRadius.only(
-                                                    bottomLeft:
-                                                        Radius.circular(8),
-                                                    bottomRight:
-                                                        Radius.circular(8),
-                                                  ),
-                                                ),
-                                                child: Text(
-                                                  'PM',
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                    color:
-                                                        selectedTime.period ==
-                                                                DayPeriod.pm
-                                                            ? Colors.white
-                                                            : Colors.black,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-
-                              // Confirm button
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 24.0, horizontal: 16.0),
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    timeController.text =
-                                        selectedTime.format(context);
-                                    Navigator.of(context).pop();
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: black,
-                                    foregroundColor: Colors.white,
-                                    minimumSize: Size(double.infinity, 50),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    'Confirm',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ),
                               ),
                             ],
-                          );
-                        }),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -557,8 +427,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         );
       },
     );
-
-    setState(() {});
   }
 
   Future<void> _showCategoryDialog(
@@ -597,7 +465,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       enableDrag: true, // Ensure dragging is enabled
       builder: (context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.5, // 50% of screen initially
+          initialChildSize: 0.6, // 50% of screen initially
           minChildSize: 0.3, // Minimum size when collapsed
           maxChildSize: 0.8, // Maximum size when expanded
           expand: false,
@@ -709,64 +577,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  // Helper method to build time columns (hours, minutes)
-  Widget _buildTimeColumn({
-    required BuildContext context,
-    required List<int> values,
-    required int selectedValue,
-    required String label,
-    required Function(int) onChanged,
-  }) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey,
-          ),
-        ),
-        SizedBox(height: 12),
-        Container(
-          height: 180,
-          width: 70,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: ListView.builder(
-            itemCount: values.length,
-            itemExtent: 50,
-            itemBuilder: (context, index) {
-              final value = values[index];
-              final isSelected = value == selectedValue;
-              final formattedValue = value.toString().padLeft(2, '0');
-
-              return InkWell(
-                onTap: () => onChanged(value),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isSelected ? black : Colors.transparent,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    formattedValue,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isSelected ? Colors.white : Colors.black,
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
+  Future<void> _selectTime(BuildContext context) async {
+    _showTimePickerDialog(context);
   }
 
   @override
