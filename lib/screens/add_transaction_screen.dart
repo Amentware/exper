@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_time_picker_spinner/flutter_time_picker_spinner.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/transaction_controller.dart';
@@ -262,21 +262,23 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     });
   }
 
-  void _showTimePickerDialog(BuildContext context) {
-    DateTime initialTime = timeController.text.isNotEmpty
+  Future<void> _selectTime(BuildContext context) async {
+    final DateTime initialTime = timeController.text.isNotEmpty
         ? DateFormat('h:mm a').parse(timeController.text)
         : DateTime.now();
+    
+    DateTime selectedTime = initialTime;
 
-    showModalBottomSheet(
+    await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      enableDrag: true, // Ensure dragging is enabled
+      enableDrag: true,
       builder: (BuildContext context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.6, // 60% of screen initially
-          minChildSize: 0.3, // Minimum size when collapsed
-          maxChildSize: 0.8, // Maximum size when expanded
+          initialChildSize: 0.5,
+          minChildSize: 0.3,
+          maxChildSize: 0.6,
           expand: false,
           builder: (context, scrollController) {
             return Container(
@@ -319,36 +321,24 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     ),
                   ),
 
-                  // Time picker spinner
+                  // Time picker
                   Expanded(
-                    child: ListView(
-                      controller: scrollController,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        TimePickerSpinner(
-                          time: initialTime,
-                          is24HourMode: false,
-                          isShowSeconds: false,
-                          minutesInterval: 1,
-                          normalTextStyle: TextStyle(
-                            fontSize: 24,
-                            color: Colors.black54,
+                        // iOS-style picker
+                        Expanded(
+                          child: CupertinoDatePicker(
+                            mode: CupertinoDatePickerMode.time,
+                            initialDateTime: initialTime,
+                            use24hFormat: false,
+                            onDateTimeChanged: (DateTime newTime) {
+                              selectedTime = newTime;
+                            },
+                            backgroundColor: Colors.white,
                           ),
-                          highlightedTextStyle: TextStyle(
-                            fontSize: 24,
-                            color: black,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          spacing: 30,
-                          itemHeight: 60,
-                          isForce2Digits: true,
-                          onTimeChange: (DateTime selectedTime) {
-                            // Format time to 12-hour format with AM/PM
-                            final formattedTime =
-                                DateFormat('h:mm a').format(selectedTime);
-                            timeController.text = formattedTime;
-                          },
                         ),
-
+                        
                         // Buttons
                         Padding(
                           padding: const EdgeInsets.all(24.0),
@@ -357,9 +347,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               Expanded(
                                 child: Material(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(5),
                                   child: InkWell(
-                                    borderRadius: BorderRadius.circular(10),
+                                    splashColor: Colors.grey.shade200,
+                                    borderRadius: BorderRadius.circular(5),
                                     onTap: () => Navigator.of(context).pop(),
                                     child: Container(
                                       alignment: Alignment.center,
@@ -367,10 +358,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                       decoration: ShapeDecoration(
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.all(
-                                            Radius.circular(10),
+                                            Radius.circular(5),
                                           ),
-                                          side: BorderSide(
-                                              color: Colors.grey.shade200),
+                                          side: BorderSide(color: Colors.grey.shade200),
                                         ),
                                       ),
                                       child: const Text(
@@ -388,18 +378,28 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               Expanded(
                                 child: Material(
                                   color: black,
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(5),
                                   child: InkWell(
                                     splashColor: Colors.black,
-                                    borderRadius: BorderRadius.circular(10),
-                                    onTap: () => Navigator.of(context).pop(),
+                                    borderRadius: BorderRadius.circular(5),
+                                    onTap: () {
+                                      // Format time to 12-hour format with AM/PM
+                                      final formattedTime = DateFormat('h:mm a').format(selectedTime);
+                                      
+                                      // Update the time controller
+                                      setState(() {
+                                        timeController.text = formattedTime;
+                                      });
+                                      
+                                      Navigator.of(context).pop();
+                                    },
                                     child: Container(
                                       alignment: Alignment.center,
                                       padding: const EdgeInsets.all(15),
                                       decoration: const ShapeDecoration(
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.all(
-                                            Radius.circular(10),
+                                            Radius.circular(5),
                                           ),
                                         ),
                                       ),
@@ -427,6 +427,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         );
       },
     );
+  }
+
+  void _showTimePickerDialog(BuildContext context) {
+    _selectTime(context);
   }
 
   Future<void> _showCategoryDialog(
@@ -575,10 +579,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         );
       },
     );
-  }
-
-  Future<void> _selectTime(BuildContext context) async {
-    _showTimePickerDialog(context);
   }
 
   @override
@@ -922,7 +922,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                     Padding(
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 16),
-                                      child: Icon(Icons.access_time,
+                                      child: Icon(Icons.access_time_rounded,
                                           color: black, size: 22),
                                     ),
                                     const SizedBox(width: 8),

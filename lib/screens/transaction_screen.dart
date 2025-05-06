@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../widgets/colors.dart';
@@ -9,7 +10,6 @@ import '../controllers/transaction_controller.dart';
 import '../controllers/category_controller.dart';
 import '../models/transaction.dart' as models;
 import 'add_transaction_screen.dart';
-import 'package:flutter_time_picker_spinner/flutter_time_picker_spinner.dart';
 
 class TransactionScreen extends StatefulWidget {
   const TransactionScreen({Key? key}) : super(key: key);
@@ -1262,18 +1262,18 @@ class _TransactionScreenState extends State<TransactionScreen> {
     );
   }
 
-  Future<void> _showTimePickerDialog(BuildContext context) {
-    DateTime initialTime = DateTime.now();
+  Future<void> _showTimePickerDialog(BuildContext context) async {
+    final DateTime initialTime = DateTime.now();
     DateTime selectedTime = initialTime;
 
-    return showModalBottomSheet(
+    await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       enableDrag: true,
-      builder: (context) {
+      builder: (BuildContext context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.45,
+          initialChildSize: 0.5,
           minChildSize: 0.3,
           maxChildSize: 0.6,
           expand: false,
@@ -1287,7 +1287,6 @@ class _TransactionScreenState extends State<TransactionScreen> {
                 ),
               ),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 children: [
                   // Handle for the bottom sheet
                   Container(
@@ -1319,128 +1318,113 @@ class _TransactionScreenState extends State<TransactionScreen> {
                     ),
                   ),
 
-                  // Time picker spinner
+                  // Time picker
                   Expanded(
-                    child: SingleChildScrollView(
-                      controller: scrollController,
-                      child: Column(
-                        children: [
-                          Container(
-                            height: 180,
-                            padding: EdgeInsets.all(10),
-                            child: TimePickerSpinner(
-                              time: initialTime,
-                              is24HourMode: false,
-                              isShowSeconds: false,
-                              normalTextStyle: TextStyle(
-                                fontSize: 22,
-                                color: Colors.black54,
-                              ),
-                              highlightedTextStyle: TextStyle(
-                                fontSize: 22,
-                                color: black,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              spacing: 30,
-                              itemHeight: 50,
-                              isForce2Digits: true,
-                              onTimeChange: (DateTime time) {
-                                selectedTime = time;
-                              },
-                            ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // iOS-style picker
+                        Expanded(
+                          child: CupertinoDatePicker(
+                            mode: CupertinoDatePickerMode.time,
+                            initialDateTime: initialTime,
+                            use24hFormat: false,
+                            onDateTimeChanged: (DateTime newTime) {
+                              selectedTime = newTime;
+                            },
+                            backgroundColor: Colors.white,
                           ),
-
-                          // Buttons
-                          Padding(
-                            padding: const EdgeInsets.all(24.0),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Material(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(10),
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(10),
-                                      onTap: () => Navigator.of(context).pop(),
-                                      child: Container(
-                                        alignment: Alignment.center,
-                                        padding: const EdgeInsets.all(15),
-                                        decoration: ShapeDecoration(
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.all(
-                                              Radius.circular(10),
-                                            ),
-                                            side: BorderSide(
-                                                color: Colors.grey.shade200),
+                        ),
+                        
+                        // Buttons
+                        Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Material(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(5),
+                                  child: InkWell(
+                                    splashColor: Colors.grey.shade200,
+                                    borderRadius: BorderRadius.circular(5),
+                                    onTap: () => Navigator.of(context).pop(),
+                                    child: Container(
+                                      alignment: Alignment.center,
+                                      padding: const EdgeInsets.all(15),
+                                      decoration: ShapeDecoration(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.all(
+                                            Radius.circular(5),
                                           ),
+                                          side: BorderSide(color: Colors.grey.shade200),
                                         ),
-                                        child: const Text(
-                                          'Cancel',
-                                          style: TextStyle(
-                                            color: black,
-                                            fontWeight: FontWeight.w900,
-                                          ),
+                                      ),
+                                      child: const Text(
+                                        'Cancel',
+                                        style: TextStyle(
+                                          color: black,
+                                          fontWeight: FontWeight.w900,
                                         ),
                                       ),
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Material(
-                                    color: black,
-                                    borderRadius: BorderRadius.circular(10),
-                                    child: InkWell(
-                                      splashColor: Colors.black,
-                                      borderRadius: BorderRadius.circular(10),
-                                      onTap: () {
-                                        // Create a new DateTime with the selected time
-                                        final newDateTime = DateTime(
-                                          selectedTime.year,
-                                          selectedTime.month,
-                                          selectedTime.day,
-                                          selectedTime.hour,
-                                          selectedTime.minute,
-                                        );
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Material(
+                                  color: black,
+                                  borderRadius: BorderRadius.circular(5),
+                                  child: InkWell(
+                                    splashColor: Colors.black,
+                                    borderRadius: BorderRadius.circular(5),
+                                    onTap: () {
+                                      // Create a new DateTime with the selected time
+                                      final newDateTime = DateTime(
+                                        selectedTime.year,
+                                        selectedTime.month,
+                                        selectedTime.day,
+                                        selectedTime.hour,
+                                        selectedTime.minute,
+                                      );
 
-                                        // Apply the filter
-                                        transactionController
-                                            .filterByDateRangeLocally(
-                                          newDateTime,
-                                          newDateTime
-                                              .add(Duration(minutes: 59)),
-                                        );
+                                      // Apply the filter
+                                      transactionController.filterByDateRangeLocally(
+                                        newDateTime,
+                                        newDateTime.add(Duration(minutes: 59)),
+                                      );
 
-                                        // Update the UI
-                                        setState(() {});
-                                        Navigator.of(context).pop();
-                                      },
-                                      child: Container(
-                                        alignment: Alignment.center,
-                                        padding: const EdgeInsets.all(15),
-                                        decoration: const ShapeDecoration(
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.all(
-                                              Radius.circular(10),
-                                            ),
+                                      // Update the UI
+                                      setState(() {});
+                                      
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: Container(
+                                      alignment: Alignment.center,
+                                      padding: const EdgeInsets.all(15),
+                                      decoration: const ShapeDecoration(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.all(
+                                            Radius.circular(5),
                                           ),
                                         ),
-                                        child: const Text(
-                                          'Confirm',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w900,
-                                          ),
+                                      ),
+                                      child: const Text(
+                                        'Confirm',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w900,
                                         ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
