@@ -37,11 +37,7 @@
   <title>exper</title>
   <link rel="manifest" href="manifest.json">
   
-  
   <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
-  
-  
-  
   
   <style id="splash-screen-style">
     html {
@@ -114,35 +110,7 @@
     }
   </script>
   
-  <!-- Script to disable iOS swipe navigation gestures -->
-  <script>
-    document.addEventListener('touchstart', function(e) {
-      // Prevent multi-touch gestures on iOS devices
-      if (e.touches.length > 1) {
-        e.preventDefault();
-      }
-    }, { passive: false });
-    
-    // Prevent swipe navigation on iOS when in standalone mode (PWA)
-    window.addEventListener('load', function() {
-      if (window.navigator.standalone === true) {
-        document.addEventListener('touchmove', function(e) {
-          // Check if the touch started from the edge (approximately 20px from edge)
-          if (e.touches[0].pageX < 20 || e.touches[0].pageX > window.innerWidth - 20) {
-            e.preventDefault();
-          }
-        }, { passive: false });
-      }
-      
-      // Prevent the bounce effect when scrolling
-      document.body.addEventListener('touchmove', function(e) {
-        if (e.scale !== 1) {
-          e.preventDefault();
-        }
-      }, { passive: false });
-    });
-  </script>
-
+  <!-- Script to disable navigation and gestures -->
   <script>
     // Disable browser back and forward navigation
     window.addEventListener('popstate', function(event) {
@@ -163,6 +131,33 @@
     window.addEventListener('beforeunload', function(event) {
       history.pushState(null, '', window.location.href);
     });
+
+    // Disable keyboard navigation
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace' || e.key === 'Alt+Left' || e.key === 'Alt+Right') {
+        e.preventDefault();
+      }
+    });
+
+    // Disable touch gestures for navigation
+    document.addEventListener('touchstart', function(e) {
+      // Prevent multi-touch gestures
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    document.addEventListener('touchmove', function(e) {
+      // Prevent edge swipes
+      if (e.touches[0].pageX < 20 || e.touches[0].pageX > window.innerWidth - 20) {
+        e.preventDefault();
+      }
+      
+      // Prevent bounce effect
+      if (e.scale !== 1) {
+        e.preventDefault();
+      }
+    }, { passive: false });
   </script>
 </head>
 <body>
@@ -172,9 +167,5 @@
       <img class="center" aria-hidden="true" src="splash/img/light-1x.png" alt="">
   </picture>
   
-  
-  
   <script src="flutter_bootstrap.js" async=""></script>
-
-
 </body></html>
