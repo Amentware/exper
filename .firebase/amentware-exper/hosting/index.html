@@ -142,6 +142,28 @@
       }, { passive: false });
     });
   </script>
+
+  <script>
+    // Disable browser back and forward navigation
+    window.addEventListener('popstate', function(event) {
+      history.pushState(null, '', window.location.href);
+    });
+
+    // Prevent navigation on load
+    window.addEventListener('load', function() {
+      history.pushState(null, '', window.location.href);
+    });
+
+    // Prevent navigation on hash change
+    window.addEventListener('hashchange', function(event) {
+      history.pushState(null, '', window.location.href);
+    });
+
+    // Prevent navigation on beforeunload
+    window.addEventListener('beforeunload', function(event) {
+      history.pushState(null, '', window.location.href);
+    });
+  </script>
 </head>
 <body>
   <picture id="splash">
