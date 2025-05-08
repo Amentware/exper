@@ -43,6 +43,13 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     // Ensure categories are loaded
     _ensureCategoriesLoaded();
+    
+    // Prevent back navigation
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (Navigator.canPop(context)) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    });
   }
 
   // Make sure categories are available for the UI
@@ -58,87 +65,90 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          scrolledUnderElevation: 0, // Prevents elevation change when scrolling
-          // Force white color even during scroll
-          surfaceTintColor: Colors.white,
-          shadowColor: Colors.transparent,
-          actions: [
-            Container(
-              margin: const EdgeInsets.only(right: 16),
-              child: GestureDetector(
-                onTap: () {
-                  // Navigate to settings tab (index 4)
-                  homeController.changeTab(4);
-                },
-                child: CircleAvatar(
-                  backgroundColor: Colors.black,
-                  radius: 16,
-                  child: Obx(() {
-                    final userName = profileController.userName;
-                    return Text(
-                      userName.isNotEmpty ? userName[0] : "U",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    );
-                  }),
+    return WillPopScope(
+      onWillPop: () async => false, // Prevent back navigation
+      child: SafeArea(
+        child: Scaffold(
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            scrolledUnderElevation: 0, // Prevents elevation change when scrolling
+            // Force white color even during scroll
+            surfaceTintColor: Colors.white,
+            shadowColor: Colors.transparent,
+            actions: [
+              Container(
+                margin: const EdgeInsets.only(right: 16),
+                child: GestureDetector(
+                  onTap: () {
+                    // Navigate to settings tab (index 4)
+                    homeController.changeTab(4);
+                  },
+                  child: CircleAvatar(
+                    backgroundColor: Colors.black,
+                    radius: 16,
+                    child: Obx(() {
+                      final userName = profileController.userName;
+                      return Text(
+                        userName.isNotEmpty ? userName[0] : "U",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      );
+                    }),
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-        floatingActionButton: Obx(() => homeController.selectedIndex.value == 0
-                ? Container(
-                    margin: EdgeInsets.only(bottom: 30.0, right: 5),
-                    child: FloatingActionButton(
-                      onPressed: () {
-                        Get.to(() => AddTransactionScreen(),
-                                transition: Transition.rightToLeft)
-                            ?.then((result) {
-                          if (result == true) {
-                            // Refresh transaction data if needed
-                            //Get.find<TransactionController>().fetchTransactions();
-                          }
-                        });
-                      },
-                      backgroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                      child: const Icon(
-                        Icons.add,
-                        color: Colors.white,
-                      ),
-                    ),
-                  )
-                : Container() // Return an empty container when not on dashboard
-            ),
-        drawer: Drawer(
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.zero,
-          ),
-          child: Container(
-            color: Colors.white,
-            child: _buildSidebar(context),
-          ),
-        ),
-        body: Obx(
-          () => IndexedStack(
-            index: homeController.selectedIndex.value,
-            children: [
-              DashboardScreen(),
-              TransactionScreen(),
-              BudgetScreen(),
-              ReportsScreen(),
-              SettingsScreen(),
             ],
+          ),
+          floatingActionButton: Obx(() => homeController.selectedIndex.value == 0
+                  ? Container(
+                      margin: EdgeInsets.only(bottom: 30.0, right: 5),
+                      child: FloatingActionButton(
+                        onPressed: () {
+                          Get.to(() => AddTransactionScreen(),
+                                  transition: Transition.rightToLeft)
+                              ?.then((result) {
+                            if (result == true) {
+                              // Refresh transaction data if needed
+                              //Get.find<TransactionController>().fetchTransactions();
+                            }
+                          });
+                        },
+                        backgroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: const Icon(
+                          Icons.add,
+                          color: Colors.white,
+                        ),
+                      ),
+                    )
+                  : Container() // Return an empty container when not on dashboard
+              ),
+          drawer: Drawer(
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.zero,
+            ),
+            child: Container(
+              color: Colors.white,
+              child: _buildSidebar(context),
+            ),
+          ),
+          body: Obx(
+            () => IndexedStack(
+              index: homeController.selectedIndex.value,
+              children: [
+                DashboardScreen(),
+                TransactionScreen(),
+                BudgetScreen(),
+                ReportsScreen(),
+                SettingsScreen(),
+              ],
+            ),
           ),
         ),
       ),

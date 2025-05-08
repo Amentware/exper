@@ -118,7 +118,13 @@ class AuthWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     final authController = Get.find<AuthController>();
     return Obx(() {
-      return authController.user.value != null ? HomeScreen() : LoginPage();
+      if (authController.user.value != null) {
+        return WillPopScope(
+          onWillPop: () async => false, // Prevent back navigation
+          child: HomeScreen(),
+        );
+      }
+      return LoginPage();
     });
   }
 }
