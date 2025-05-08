@@ -112,35 +112,58 @@
   
   <!-- Script to disable navigation and gestures -->
   <script>
+    // Store the initial state
+    let initialUrl = window.location.href;
+
+    // Function to prevent navigation
+    function preventNavigation() {
+      history.pushState(null, '', initialUrl);
+    }
+
     // Disable browser back and forward navigation
     window.addEventListener('popstate', function(event) {
-      history.pushState(null, '', window.location.href);
+      preventNavigation();
     });
 
     // Prevent navigation on load
     window.addEventListener('load', function() {
-      history.pushState(null, '', window.location.href);
+      preventNavigation();
     });
 
     // Prevent navigation on hash change
     window.addEventListener('hashchange', function(event) {
-      history.pushState(null, '', window.location.href);
+      preventNavigation();
     });
 
     // Prevent navigation on beforeunload
     window.addEventListener('beforeunload', function(event) {
-      history.pushState(null, '', window.location.href);
+      preventNavigation();
     });
 
     // Disable keyboard navigation
     document.addEventListener('keydown', function(e) {
-      if (e.key === 'Backspace' || e.key === 'Alt+Left' || e.key === 'Alt+Right') {
+      // Prevent backspace navigation
+      if (e.key === 'Backspace' && !e.target.matches('input, textarea')) {
         e.preventDefault();
       }
-    });
+      // Prevent Alt+Left/Right navigation
+      if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+        e.preventDefault();
+      }
+      // Prevent browser back/forward shortcuts
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+        e.preventDefault();
+      }
+    }, true);
 
     // Disable touch gestures for navigation
+    let touchStartX = 0;
+    let touchStartY = 0;
+
     document.addEventListener('touchstart', function(e) {
+      touchStartX = e.touches[0].pageX;
+      touchStartY = e.touches[0].pageY;
+      
       // Prevent multi-touch gestures
       if (e.touches.length > 1) {
         e.preventDefault();
@@ -148,8 +171,18 @@
     }, { passive: false });
 
     document.addEventListener('touchmove', function(e) {
+      const touchX = e.touches[0].pageX;
+      const touchY = e.touches[0].pageY;
+      const deltaX = touchX - touchStartX;
+      const deltaY = touchY - touchStartY;
+
+      // Prevent horizontal swipe gestures
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+        e.preventDefault();
+      }
+
       // Prevent edge swipes
-      if (e.touches[0].pageX < 20 || e.touches[0].pageX > window.innerWidth - 20) {
+      if (touchX < 20 || touchX > window.innerWidth - 20) {
         e.preventDefault();
       }
       
@@ -157,6 +190,31 @@
       if (e.scale !== 1) {
         e.preventDefault();
       }
+    }, { passive: false });
+
+    // Prevent context menu
+    document.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+    });
+
+    // Prevent drag and drop
+    document.addEventListener('dragstart', function(e) {
+      e.preventDefault();
+    });
+
+    // Prevent selection
+    document.addEventListener('selectstart', function(e) {
+      e.preventDefault();
+    });
+
+    // Prevent double tap zoom
+    document.addEventListener('dblclick', function(e) {
+      e.preventDefault();
+    }, { passive: false });
+
+    // Prevent pinch zoom
+    document.addEventListener('gesturestart', function(e) {
+      e.preventDefault();
     }, { passive: false });
   </script>
 </head>
