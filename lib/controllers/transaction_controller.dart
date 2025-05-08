@@ -473,17 +473,20 @@ class TransactionController extends GetxController {
   }
 
   // Edit an existing transaction with a new Transaction object
-  Future<void> editTransaction(
-      String id, models.Transaction updatedTransaction) async {
+  Future<void> editTransaction(String id, models.Transaction updatedTransaction) async {
     try {
       isLoading.value = true;
       await _firestore
           .collection('transactions')
           .doc(id)
-          .update(updatedTransaction.toMap());
+          .update({
+            ...updatedTransaction.toMap(),
+            'updated_at': Timestamp.fromDate(DateTime.now()),
+          });
       await fetchTransactions();
     } catch (e) {
       print('Error editing transaction: $e');
+      throw e; // Re-throw to handle in UI
     } finally {
       isLoading.value = false;
     }
@@ -581,7 +584,6 @@ class TransactionController extends GetxController {
       if (category != null) {
         return category.type;
       }
-
       // Default to expense if category not found
       return 'expense';
     } catch (e) {

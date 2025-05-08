@@ -846,6 +846,15 @@ class _TransactionScreenState extends State<TransactionScreen> {
       key: Key(transaction.id),
       background: Container(
         decoration: BoxDecoration(
+          color: Colors.blue.shade400,
+          borderRadius: BorderRadius.circular(0),
+        ),
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.only(left: 16),
+        child: const Icon(Icons.edit, color: Colors.white),
+      ),
+      secondaryBackground: Container(
+        decoration: BoxDecoration(
           color: Colors.red.shade400,
           borderRadius: BorderRadius.circular(0),
         ),
@@ -853,25 +862,33 @@ class _TransactionScreenState extends State<TransactionScreen> {
         padding: const EdgeInsets.only(right: 16),
         child: const Icon(Icons.delete, color: Colors.white),
       ),
-      direction: DismissDirection.endToStart,
+      direction: DismissDirection.horizontal,
       confirmDismiss: (direction) async {
-        return await _showDeleteConfirmationDialog();
+        if (direction == DismissDirection.endToStart) {
+          return await _showDeleteConfirmationDialog();
+        } else {
+          // Edit action
+          await _editTransaction(transaction);
+          return false; // Don't dismiss the item
+        }
       },
       onDismissed: (direction) async {
-        // First remove the transaction from the local list
-        final index = transactionController.filteredTransactions
-            .indexWhere((t) => t.id == transaction.id);
-        if (index != -1) {
-          // Remove from local list immediately to prevent the dismissed widget error
-          transactionController.filteredTransactions.removeAt(index);
-        }
+        if (direction == DismissDirection.endToStart) {
+          // First remove the transaction from the local list
+          final index = transactionController.filteredTransactions
+              .indexWhere((t) => t.id == transaction.id);
+          if (index != -1) {
+            // Remove from local list immediately to prevent the dismissed widget error
+            transactionController.filteredTransactions.removeAt(index);
+          }
 
-        // Then delete from the database
-        await transactionController.deleteTransaction(transaction.id);
+          // Then delete from the database
+          await transactionController.deleteTransaction(transaction.id);
 
-        // Force rebuild
-        if (mounted) {
-          setState(() {});
+          // Force rebuild
+          if (mounted) {
+            setState(() {});
+          }
         }
       },
       child: Column(
@@ -1690,5 +1707,23 @@ class _TransactionScreenState extends State<TransactionScreen> {
         );
       },
     );
+  }
+
+  Future<void> _editTransaction(models.Transaction transaction) async {
+    final result = await Get.to(
+      () => AddTransactionScreen(
+        transaction: transaction,
+        isEditing: true,
+      ),
+      transition: Transition.rightToLeft,
+    );
+
+    if (result == true) {
+      // Refresh transaction data
+      await transactionController.fetchTransactions();
+      if (mounted) {
+        setState(() {});
+      }
+    }
   }
 }

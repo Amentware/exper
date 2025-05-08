@@ -10,7 +10,14 @@ import '../models/transaction.dart';
 import '../widgets/colors.dart';
 
 class AddTransactionScreen extends StatefulWidget {
-  const AddTransactionScreen({Key? key}) : super(key: key);
+  final Transaction? transaction;
+  final bool isEditing;
+
+  const AddTransactionScreen({
+    Key? key,
+    this.transaction,
+    this.isEditing = false,
+  }) : super(key: key);
 
   @override
   _AddTransactionScreenState createState() => _AddTransactionScreenState();
@@ -35,22 +42,39 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   @override
   void initState() {
     super.initState();
-    dateController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    timeController.text = DateFormat('h:mm a').format(DateTime.now());
-
-    // Initialize selected category from the list if available
-    if (categoryController.categoryNames.isNotEmpty) {
-      // Skip "All Categories" entry which is at index 0
-      if (categoryController.categoryNames.length > 1) {
-        selectedCategory.value = categoryController.categoryNames[1];
+    
+    if (widget.isEditing && widget.transaction != null) {
+      // Pre-fill the form with transaction data
+      descriptionController.text = widget.transaction!.description;
+      amountController.text = widget.transaction!.amount.toString();
+      dateController.text = DateFormat('yyyy-MM-dd').format(widget.transaction!.date);
+      timeController.text = DateFormat('h:mm a').format(widget.transaction!.date);
+      
+      // Set the category
+      final category = categoryController.getCategoryById(widget.transaction!.categoryId);
+      if (category != null) {
+        selectedCategory.value = category.name;
+        isExpense.value = category.type == 'expense';
       }
     } else {
-      // Fetch categories if not loaded yet
-      categoryController.fetchCategories().then((_) {
+      // New transaction - set default values
+      dateController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      timeController.text = DateFormat('h:mm a').format(DateTime.now());
+
+      // Initialize selected category from the list if available
+      if (categoryController.categoryNames.isNotEmpty) {
+        // Skip "All Categories" entry which is at index 0
         if (categoryController.categoryNames.length > 1) {
           selectedCategory.value = categoryController.categoryNames[1];
         }
-      });
+      } else {
+        // Fetch categories if not loaded yet
+        categoryController.fetchCategories().then((_) {
+          if (categoryController.categoryNames.length > 1) {
+            selectedCategory.value = categoryController.categoryNames[1];
+          }
+        });
+      }
     }
   }
 
@@ -112,24 +136,22 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
       final categoryId = categoryObj.id;
 
-      print(
-          'CREATING TRANSACTION: userId=$userId, description=$description, amount=$amount, categoryId=$categoryId, date=$date');
-
       final transaction = Transaction(
-        id: '', // Will be set by Firestore
+        id: widget.isEditing ? widget.transaction!.id : '', // Keep existing ID if editing
         userId: userId,
         description: description,
         amount: amount,
         categoryId: categoryId,
         date: date,
-        createdAt: now,
+        createdAt: widget.isEditing ? widget.transaction!.createdAt : now,
         updatedAt: now,
       );
 
-      // Print the exact data being saved to Firestore
-      print('TRANSACTION DATA BEING SAVED: ${transaction.toMap()}');
-
-      await transactionController.addTransaction(transaction);
+      if (widget.isEditing) {
+        await transactionController.editTransaction(transaction.id, transaction);
+      } else {
+        await transactionController.addTransaction(transaction);
+      }
 
       Get.back(result: true); // Success
 
@@ -137,10 +159,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       final formattedAmount =
           profileController.currency + amountController.text;
       final transactionType = isExpense.value ? 'Expense' : 'Income';
+      final action = widget.isEditing ? 'Updated' : 'Added';
 
       Get.snackbar(
-        'Transaction Added',
-        '$transactionType of $formattedAmount added to ${selectedCategory.value}',
+        'Transaction $action',
+        '$transactionType of $formattedAmount $action to ${selectedCategory.value}',
         colorText: Colors.white,
         backgroundColor: Colors.black,
         snackPosition: SnackPosition.TOP,
@@ -225,8 +248,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 10.0),
                       child: ListView(
-                        controller:
-                            scrollController, // Use the provided controller
+                        controller: scrollController,
                         children: [
                           CalendarDatePicker(
                             initialDate: initialDate,
@@ -587,7 +609,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
-          'Add Transaction',
+          widget.isEditing ? 'Edit Transaction' : 'Add Transaction',
           style: TextStyle(
             fontWeight: FontWeight.w900,
             color: black,

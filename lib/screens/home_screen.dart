@@ -10,6 +10,7 @@ import '../screens/dashboard_screen.dart';
 import '../screens/budget_screen.dart';
 import '../screens/reports_screen.dart';
 import '../screens/settings_screen.dart';
+import '../screens/category_screen.dart';
 
 class HomeController extends GetxController {
   var selectedIndex = 0.obs;
@@ -81,8 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 margin: const EdgeInsets.only(right: 16),
                 child: GestureDetector(
                   onTap: () {
-                    // Navigate to settings tab (index 4)
-                    homeController.changeTab(4);
+                    homeController.changeTab(5); // Updated index for settings
                   },
                   child: CircleAvatar(
                     backgroundColor: Colors.black,
@@ -145,6 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 DashboardScreen(),
                 TransactionScreen(),
                 BudgetScreen(),
+                CategoryScreen(),
                 ReportsScreen(),
                 SettingsScreen(),
               ],
@@ -174,11 +175,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             _buildDrawerItem(context, "Dashboard", Icons.dashboard_outlined, 0),
-            _buildDrawerItem(
-                context, "Transactions", Icons.receipt_outlined, 1),
+            _buildDrawerItem(context, "Transactions", Icons.receipt_outlined, 1),
             _buildDrawerItem(context, "Budgets", Icons.savings_outlined, 2),
-            _buildDrawerItem(context, "Reports", Icons.bar_chart_outlined, 3),
-            _buildDrawerItem(context, "Settings", Icons.settings_outlined, 4),
+            _buildDrawerItem(context, "Categories", Icons.category_outlined, 3),
+            _buildDrawerItem(context, "Reports", Icons.bar_chart_outlined, 4),
+            _buildDrawerItem(context, "Settings", Icons.settings_outlined, 5),
           ],
         ),
         Padding(
